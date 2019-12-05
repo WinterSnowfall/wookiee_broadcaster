@@ -22,7 +22,7 @@ However, Attichitcuk (Chewie's dad) wants to join in as well in the fun. And mor
 
 Let's put this a bit in perspective. Here's a layout of what we're looking at:
 
-
+```
 Shoran's PC                         Chewie's PC
  ----------                         ------------
 |          |                       |            |
@@ -37,7 +37,7 @@ Shoran's PC                         Chewie's PC
                            NAT LAN |  10.0.0.1  |-------------------------|  10.0.0.2  | NAT LAN 
                                    |            |                         |            |
                                     ------------                           ------------
-
+```
 
 Now Chewie knows his networking and since he's running Wookiee Linux, he has already forwarded all the port required by the game between Shoran and his dad. His own routing is not a problem since his dad and himself are entirely visible and accessible to one another.
 
