@@ -9,8 +9,8 @@ While there already are some good and working examples out there (see the links 
 I had to ask myself: "Isn't there a simpler way to achieve this by using something more high-level, like sockets?". The answer, as you will soon find out, was yes.
 
 Here are some other similar tools which I was able to find:
-https://github.com/gqgunhed/py-udp-broadcast-forward
-https://github.com/nomeata/udp-broadcast-relay/
+* https://github.com/gqgunhed/py-udp-broadcast-forward
+* https://github.com/nomeata/udp-broadcast-relay/
 
 # I still don't get what this does. And what's with the weird name?
 
@@ -24,18 +24,19 @@ Let's put this a bit in perspective. Here's a layout of what we're looking at:
 
 
 Shoran's PC                         Chewie's PC
- __________                         ____________
+ ----------                         ------------
 |          |                       |            |
 | 5.0.0.2  |-----------------------|  5.0.0.1   | VPN
-|__________|                       |____________|
-                                         :
-    VPN                                  :-- (routing logic)
+|          |                       |            |
+ ----------                         ------------
+    VPN                                  :
+                                         :-- (routing logic)
                                          :                                Attichitcuk's PC
-                                    _____:______                           ____________
+                                    ------------                           ------------
                                    |            |                         |            |
                            NAT LAN |  10.0.0.1  |-------------------------|  10.0.0.2  | NAT LAN 
-                                   |____________|                         |____________|
-
+                                   |            |                         |            |
+                                    ------------                           ------------
 
 
 Now Chewie knows his networking and since he's running Wookiee Linux, he has already forwarded all the port required by the game between Shoran and his dad. His own routing is not a problem since his dad and himself are entirely visible and accessible to one another.
