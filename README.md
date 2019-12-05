@@ -1,6 +1,6 @@
 # The Wookiee Broadcaster
 
-A broadcast package replication script for **Linux**, written in **Python 3**, which enables TCP/IP (or UDP/IP) LAN applications to communicate across two separate network interfaces/zones. This is particularly useful for playing LAN games via VPN, especially when several of the players reside behind NAT and only one of them has a VPN bridge that allows remote players to join.
+A broadcast packet replication script for **Linux**, written in **Python 3**, which enables TCP/IP (or UDP/IP) LAN applications to communicate across two separate network interfaces/zones. This is particularly useful for playing LAN games via VPN, especially when several of the players reside behind NAT and only one of them has a VPN bridge that allows remote players to join.
 
 ### But why code YABU (yet another broadcasting utility)?
 
@@ -45,9 +45,9 @@ But Chewie still has a problem: layer 3 VPNs don't usually forward broadcast req
 
 What about Shoran's broadcast requests? Will they reach Attichitcuk? Usually, no, and this is a problem as well, but a far simpler one. Since Attichitcuk can use Chewie's PC as a gateway, he is technically able to route packets directly (back) to Shoran (no address translation is required). In order to get Shoran's broadcast packets to Attichitcuk, Chewie can employ some firewall trickery, as described here: https://odi.ch/weblog/posting.php?posting=731
 
-Now he could do the same for Attichitcuk's broadcast packages in order to get them to Shoran, but there's one major issue that's stopping him: Shoran's PC can't resolve Attichitcuk's IP address since the latter is behind NAT. It won't know who sent the broadcast, so it won't know who to reply to.
+Now he could do the same for Attichitcuk's broadcast packets in order to get them to Shoran, but there's one major issue that's stopping him: Shoran's PC can't resolve Attichitcuk's IP address since the latter is behind NAT. It won't know who sent the broadcast, so it won't know who to reply to.
 
-What we need is some form or routing logic for broadcast packages to bridge the LAN behind NAT and the VPN interface on Chewie's PC. His PC will get the broadcast packages from Attichitcuk and replicate them on the VPN interface, by using his own VPN address as source (5.0.0.1). Remember that he's already set up forwarding rules, so anything coming to his PC on the VPN interface will now be automatically forwarded to Attichitcuk, and everything will work.
+What we need is some form or routing logic for broadcast packets to bridge the LAN behind NAT and the VPN interface on Chewie's PC. His PC will get the broadcast packets from Attichitcuk and replicate them on the VPN interface, by using his own VPN address as source (5.0.0.1). Remember that he's already set up forwarding rules, so anything coming to his PC on the VPN interface will now be automatically forwarded to Attichitcuk, and everything will work.
 
 Let the Wookiee games begin!
 
@@ -55,17 +55,17 @@ So, by now it's either very clear what the Wookiee Broadcaster does, or I've con
 
 ### Neat. I'll pretend I'm not confused. How does it work?
 
-It's written for Linux, so you'll need a **Linux OS** with **python 3.6+** installed on the machine you plan to run it on. Since I've only used the standard sockets library, no external/additional packages are required.
+It's written for Linux, so you'll need a **Linux OS** with **python 3.6+** installed on the machine you plan to run it on. Since I've only used the standard sockets library, no external/additional packets are required.
 
 You'll also need root rights to run the script (sudo works just fine), because binding sockets to an interface is just not one of the things a regular user can do.
 
 You can run **./wookiee_broadcaster.py -h** to get some hints, but in short, you'll need to specify:
 
 * -i <input> = the name of the network interface (as listed by ifconfig) on which the script will listen for incoming broadcast packets
-* -o <output> = the name of the network interface (as listed by ifconfig) on which the script will replicate any broadcast packages received on the input interface
+* -o <output> = the name of the network interface (as listed by ifconfig) on which the script will replicate any broadcast packets received on the input interface
 * -p <port> = the port on which the script will listen for packets
 * -r <range> = a range of ports on which the script will listen for packets, separated by ":", ex: 10000:10010
-* -b = bidirectional mode. Will forward broadcast packages from the output interface back to the input interface as well, though, as explained earlier, this is not usually that useful unless the network zones have bilateral routing capabilities or are somehow bridged.
+* -b = bidirectional mode. Will forward broadcast packets from the output interface back to the input interface as well, though, as explained earlier, this is not usually that useful unless the network zones have bilateral routing capabilities or are somehow bridged.
 
 To give you an example, you can run:
 
