@@ -39,7 +39,7 @@ Shoran's PC                         Chewie's PC
                                     ------------                           ------------
 ```
 
-Now Chewie knows his networking and since he's running Wookiee Linux, he's already forwarded all the port required by the game between Shoran and his dad. His own routing is not a problem since his dad is visible and accessible, being on the same local network.
+Now Chewie knows his networking and since he's running Wookiee Linux, he's already forwarded all the ports required by the game between Shoran and his dad. His own routing is not a problem since his dad is visible and accessible, being on the same local network.
 
 But Chewie still has a problem: layer 3 VPNs don't usually forward broadcast requests between network zones, even if he enables forwarding in his routing rules. More explicitly, UDP packets sent by Attichitcuk's PC on 255.255.255.255 across the 10.x.x.x zone won't cross over to 5.0.0.2. Damn, that's something Chewie can't solve by tinkering with his firewall rules.
 
@@ -81,4 +81,4 @@ Fair enough, but most games will send out broadcasts on 255.255.255.255. I have 
 
 ### Can I reuse this code or "borrow" it?
 
-Reuse it, change it, print it or write it on your living room walls if that brings you any sort of joy. In short, do whatever you want with it. If you need to put a name on this type of ultimate freedom type of license, I guess we can call it: http://www.wtfpl.net
+Reuse it, change it, print it or write it on your living room walls if that brings you any sort of joy. In short, do whatever you want with it. If you need to put a name on this ultimate freedom type of license, I guess we can call it: http://www.wtfpl.net
