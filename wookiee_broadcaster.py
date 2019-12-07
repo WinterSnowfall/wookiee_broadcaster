@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
 @author: Winter Snowfall
-@version: 0.4
-@date: 4/12/2019
+@version: 0.5
+@date: 7/12/2019
 '''
 
 import socket
@@ -35,16 +35,19 @@ def wookiee_broadcaster(input_intf, output_intf, output_ip, port):
 
 parser = argparse.ArgumentParser(description='*** The Wookiee Broadcaster *** Replicates broadcast packets across network interfaces. \
                                              Useful for TCP/IP and UDP/IP based multiplayer LAN games enjoyed using VPN.')
+optional = parser._action_groups.pop()
+required = parser.add_argument_group('required arguments')
+group = required.add_mutually_exclusive_group()
 
-group = parser.add_mutually_exclusive_group()
-parser.add_argument('-i', '--input', help='Input interface name for listening to broadcast packets.')
-parser.add_argument('-o', '--output', help='Output interface name, on which the broadcast requests will be replicated.')
+required.add_argument('-i', '--input', help='Input interface name for listening to broadcast packets.', required=True)
+required.add_argument('-o', '--output', help='Output interface name, on which the broadcast requests will be replicated.', required=True)
 group.add_argument('-p', '--port', help='Port on which the broadcaster will listen for packets and also the replication port.')
 group.add_argument('-r', '--range', help='A range of ports on which the broadcaster will listen for packets and also the replication ports. \
                                           The accepted format is <start_port>:<end_port>.')
 parser.add_argument('-b', '--bidirectional', help='Replicate broadcasts coming from the output interface to the input interface as well',
                     action='store_true')
 
+parser._action_groups.append(optional)
 args = parser.parse_args()
 
 output_ip_query_subprocess = subprocess.Popen(f'ifconfig {args.output}' + " | grep -w inet | awk '{print $2;}'", shell=True, stdout=subprocess.PIPE)
