@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
 @author: Winter Snowfall
-@version: 1.0
-@date: 7/12/2019
+@version: 1.1
+@date: 10/12/2019
 '''
 
 import socket
@@ -97,8 +97,8 @@ elif args.range is not None:
         
         if args.bidirectional:
             print('*** Running in bidirectional mode ***')
-            print(f'Starting wookiee_broadcaster - listening on {args.output}/{BROADCAST_ADDRESS}:{args.port}, broadcasting on {args.input}/{input_ip}:{range_port}')
-            wookie_threads_b[thread_counter] = threading.Thread(target=wookiee_broadcaster, args=(args.output, args.input, output_ip, int(range_port)))
+            print(f'Starting wookiee_broadcaster - listening on {args.output}/{BROADCAST_ADDRESS}:{range_port}, broadcasting on {args.input}/{input_ip}:{range_port}')
+            wookie_threads_b[thread_counter] = threading.Thread(target=wookiee_broadcaster, args=(args.output, args.input, input_ip, int(range_port)))
             wookie_threads_b[thread_counter].setDaemon(True)
             wookie_threads_b[thread_counter].start()
             
