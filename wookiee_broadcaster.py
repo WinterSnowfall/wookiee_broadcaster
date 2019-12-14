@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
 @author: Winter Snowfall
-@version: 1.1
-@date: 10/12/2019
+@version: 1.2
+@date: 14/12/2019
 '''
 
 import socket
@@ -65,16 +65,16 @@ print(f'Input IP address is: {input_ip}')
         
 if args.port is not None:
     print(f'Starting wookiee_broadcaster - listening on {args.input}/{BROADCAST_ADDRESS}:{args.port}, broadcasting on {args.output}/{output_ip}:{args.port}')
-    wookie_thread = threading.Thread(target=wookiee_broadcaster, args=(args.input, args.output, output_ip, int(args.port)))
-    wookie_thread.setDaemon(True)
-    wookie_thread.start()
+    wookiee_thread = threading.Thread(target=wookiee_broadcaster, args=(args.input, args.output, output_ip, int(args.port)))
+    wookiee_thread.setDaemon(True)
+    wookiee_thread.start()
     
     if args.bidirectional:
         print('*** Running in bidirectional mode ***')
         print(f'Starting wookiee_broadcaster - listening on {args.output}/{BROADCAST_ADDRESS}:{args.port}, broadcasting on {args.input}/{input_ip}:{args.port}')
-        wookie_thread_b = threading.Thread(target=wookiee_broadcaster, args=(args.output, args.input, input_ip, int(args.port)))
-        wookie_thread_b.setDaemon(True)
-        wookie_thread_b.start()
+        wookiee_thread_b = threading.Thread(target=wookiee_broadcaster, args=(args.output, args.input, input_ip, int(args.port)))
+        wookiee_thread_b.setDaemon(True)
+        wookiee_thread_b.start()
     
 elif args.range is not None:
     start_port, end_port = args.range.split(':')
@@ -85,22 +85,22 @@ elif args.range is not None:
     
     numeral_port_range = range(int(start_port), int(end_port) + 1)
     
-    wookie_threads = [None for i in range(len(numeral_port_range))]
-    wookie_threads_b = wookie_threads
+    wookiee_threads = [None for i in range(len(numeral_port_range))]
+    wookiee_threads_b = wookiee_threads
     thread_counter = 0
     
     for range_port in range(int(start_port), int(end_port) + 1):
         print(f'Starting wookiee_broadcaster - listening on {args.input}/{BROADCAST_ADDRESS}:{range_port}, broadcasting on {args.output}/{output_ip}:{range_port}')
-        wookie_threads[thread_counter] = threading.Thread(target=wookiee_broadcaster, args=(args.input, args.output, output_ip, int(range_port)))
-        wookie_threads[thread_counter].setDaemon(True)
-        wookie_threads[thread_counter].start()
+        wookiee_threads[thread_counter] = threading.Thread(target=wookiee_broadcaster, args=(args.input, args.output, output_ip, int(range_port)))
+        wookiee_threads[thread_counter].setDaemon(True)
+        wookiee_threads[thread_counter].start()
         
         if args.bidirectional:
             print('*** Running in bidirectional mode ***')
             print(f'Starting wookiee_broadcaster - listening on {args.output}/{BROADCAST_ADDRESS}:{range_port}, broadcasting on {args.input}/{input_ip}:{range_port}')
-            wookie_threads_b[thread_counter] = threading.Thread(target=wookiee_broadcaster, args=(args.output, args.input, input_ip, int(range_port)))
-            wookie_threads_b[thread_counter].setDaemon(True)
-            wookie_threads_b[thread_counter].start()
+            wookiee_threads_b[thread_counter] = threading.Thread(target=wookiee_broadcaster, args=(args.output, args.input, input_ip, int(range_port)))
+            wookiee_threads_b[thread_counter].setDaemon(True)
+            wookiee_threads_b[thread_counter].start()
             
         thread_counter += 1
 else:
