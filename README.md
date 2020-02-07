@@ -47,7 +47,7 @@ What about Shoran's broadcast requests? Will they reach Attichitcuk? Usually, no
 
 Now he could do the same for Attichitcuk's broadcast packets in order to get them to Shoran, but there's one major issue that's stopping him: Shoran's PC can't resolve Attichitcuk's IP address since the latter is behind NAT. It won't know who sent the broadcast, so it won't know who to reply to.
 
-What we need is some form or routing logic for broadcast packets to bridge the LAN behind NAT and the VPN interface on Chewie's PC. His PC will get the broadcast packets from Attichitcuk and replicate them on the VPN interface, by using his own VPN address as source (5.0.0.1). Remember that he's already set up forwarding rules, so anything coming to his PC on the VPN interface will now be automatically forwarded to Attichitcuk, and everything will work.
+What we need is some form of routing logic for broadcast packets to bridge the LAN behind NAT and the VPN interface on Chewie's PC. His PC will get the broadcast packets from Attichitcuk and replicate them on the VPN interface, by using his own VPN address as source (5.0.0.1). Remember that he's already set up forwarding rules, so anything coming to his PC on the VPN interface will now be automatically forwarded to Attichitcuk, and everything will work.
 
 Let the Wookiee games begin!
 
