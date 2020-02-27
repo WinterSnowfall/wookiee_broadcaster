@@ -78,7 +78,3 @@ in order to start a background process which will replicate any broadcast packet
 ### How come you're only listening to broadcasts on 255.255.255.255? There are plenty of other potential broadcast addresses, including local ones, like 10.0.0.255!
 
 Fair enough, but most games will send out broadcasts on 255.255.255.255. I have yet to run across one which does this any differently, so... I haven't programmed that path yet. Feel free to tweak the code to your needs if you find its purpose insufficient.
-
-### Can I reuse this code or "borrow" it?
-
-Reuse it, change it, print it or write it on your living room walls if that brings you any sort of joy. In short, do whatever you want with it. If you need to put a name on this ultimate freedom type of license, I guess we can call it: http://www.wtfpl.net
