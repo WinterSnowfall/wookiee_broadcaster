@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 '''
 @author: Winter Snowfall
-@version: 1.2
-@date: 14/12/2019
+@version: 1.3
+@date: 18/10/2020
 '''
 
 import socket
+import logging
 import threading
 import argparse
 import subprocess
-from time import sleep
+
+##logging configuration block
+log_file_full_path = 'wookiee_broadcaster.log'
+logger_format = '%(asctime)s %(levelname)s >>> %(message)s'
+logger_file_handler = logging.FileHandler(log_file_full_path, mode='w', encoding='utf-8')
+logger_file_formatter = logging.Formatter(logger_format)
+logger_file_handler.setFormatter(logger_file_formatter)
+logging.basicConfig(format=logger_format, level=logging.INFO) #DEBUG, INFO, WARNING, ERROR, CRITICAL
+logger = logging.getLogger(__name__)
+logger.addHandler(logger_file_handler)
 
 #constants
 BROADCAST_ADDRESS = '255.255.255.255'
@@ -33,9 +43,10 @@ def wookiee_broadcaster(input_intf, output_intf, output_ip, port):
     
     while True:
         data, addr = receiver.recvfrom(RECV_BUFFER_SIZE)
-        #print(f'{addr[0]}:{addr[1]} sent: {data}')
+        logger.debug(f'WB >>> {addr[0]}:{addr[1]} sent: {data}')
         
         if addr[0] != output_ip:
+            logger.info(f'WB >>> Replicating a packet received from {addr[0]}:{addr[1]} on {BROADCAST_ADDRESS}:{port}')
             broadcaster.sendto(data, (BROADCAST_ADDRESS, port))
 
 parser = argparse.ArgumentParser(description='*** The Wookiee Broadcaster *** Replicates broadcast packets across network interfaces. \
@@ -55,57 +66,74 @@ parser.add_argument('-b', '--bidirectional', help='Replicate broadcasts coming f
 parser._action_groups.append(optional)
 args = parser.parse_args()
 
+if args.input == args.output:
+    logger.error('It\'s not wise to upset a wookiee...')
+    exit(1)
+
 output_ip_query_subprocess = subprocess.Popen(f'ifconfig {args.output}' + " | grep -w inet | awk '{print $2;}'", shell=True, stdout=subprocess.PIPE)
 output_ip = output_ip_query_subprocess.communicate()[0].decode('utf-8').strip()
-print(f'Output IP address is: {output_ip}')
+logger.debug(f'Output IP address is: {output_ip}')
 
 input_ip_query_subprocess = subprocess.Popen(f'ifconfig {args.input}' + " | grep -w inet | awk '{print $2;}'", shell=True, stdout=subprocess.PIPE)
 input_ip = input_ip_query_subprocess.communicate()[0].decode('utf-8').strip()
-print(f'Input IP address is: {input_ip}')
+logger.debug(f'Input IP address is: {input_ip}')
         
 if args.port is not None:
-    print(f'Starting wookiee_broadcaster - listening on {args.input}/{BROADCAST_ADDRESS}:{args.port}, broadcasting on {args.output}/{output_ip}:{args.port}')
-    wookiee_thread = threading.Thread(target=wookiee_broadcaster, args=(args.input, args.output, output_ip, int(args.port)))
+    port = int(args.port)
+    
+    logger.info(f'Starting wookiee_broadcaster - listening on {args.input}/{BROADCAST_ADDRESS}:{port}, broadcasting on {args.output}/{output_ip}:{port}')
+    wookiee_thread = threading.Thread(target=wookiee_broadcaster, args=(args.input, args.output, output_ip, port))
     wookiee_thread.setDaemon(True)
     wookiee_thread.start()
     
     if args.bidirectional:
-        print('*** Running in bidirectional mode ***')
-        print(f'Starting wookiee_broadcaster - listening on {args.output}/{BROADCAST_ADDRESS}:{args.port}, broadcasting on {args.input}/{input_ip}:{args.port}')
-        wookiee_thread_b = threading.Thread(target=wookiee_broadcaster, args=(args.output, args.input, input_ip, int(args.port)))
+        logger.info('*** Running in bidirectional mode ***')
+        logger.info(f'Starting wookiee_broadcaster - listening on {args.output}/{BROADCAST_ADDRESS}:{port}, broadcasting on {args.input}/{input_ip}:{port}')
+        wookiee_thread_b = threading.Thread(target=wookiee_broadcaster, args=(args.output, args.input, input_ip, port))
         wookiee_thread_b.setDaemon(True)
         wookiee_thread_b.start()
     
+    try:
+        wookiee_thread.join()
+    except KeyboardInterrupt:
+        pass
+    
 elif args.range is not None:
-    start_port, end_port = args.range.split(':')
+    start_port, end_port = [int(port) for port in args.range.split(':')]
     
-    if int(end_port) <= int(start_port):
-        print('Incorrect use of the port range parameter. Please run -h to see needed parameters.')
-        exit(1)
+    if end_port <= start_port:
+        logger.error('Incorrect use of the port range parameter. Please run -h to see needed parameters.')
+        exit(2)
     
-    numeral_port_range = range(int(start_port), int(end_port) + 1)
+    numeral_port_range = range(start_port, end_port + 1)
     
     wookiee_threads = [None for i in range(len(numeral_port_range))]
     wookiee_threads_b = wookiee_threads
     thread_counter = 0
     
-    for range_port in range(int(start_port), int(end_port) + 1):
-        print(f'Starting wookiee_broadcaster - listening on {args.input}/{BROADCAST_ADDRESS}:{range_port}, broadcasting on {args.output}/{output_ip}:{range_port}')
-        wookiee_threads[thread_counter] = threading.Thread(target=wookiee_broadcaster, args=(args.input, args.output, output_ip, int(range_port)))
+    for range_port in numeral_port_range:
+        logger.info(f'Starting wookiee_broadcaster - listening on {args.input}/{BROADCAST_ADDRESS}:{range_port}, broadcasting on {args.output}/{output_ip}:{range_port}')
+        wookiee_threads[thread_counter] = threading.Thread(target=wookiee_broadcaster, args=(args.input, args.output, output_ip, range_port))
         wookiee_threads[thread_counter].setDaemon(True)
         wookiee_threads[thread_counter].start()
         
         if args.bidirectional:
-            print('*** Running in bidirectional mode ***')
-            print(f'Starting wookiee_broadcaster - listening on {args.output}/{BROADCAST_ADDRESS}:{range_port}, broadcasting on {args.input}/{input_ip}:{range_port}')
-            wookiee_threads_b[thread_counter] = threading.Thread(target=wookiee_broadcaster, args=(args.output, args.input, input_ip, int(range_port)))
+            logger.info('*** Running in bidirectional mode ***')
+            logger.info(f'Starting wookiee_broadcaster - listening on {args.output}/{BROADCAST_ADDRESS}:{range_port}, broadcasting on {args.input}/{input_ip}:{range_port}')
+            wookiee_threads_b[thread_counter] = threading.Thread(target=wookiee_broadcaster, args=(args.output, args.input, input_ip, range_port))
             wookiee_threads_b[thread_counter].setDaemon(True)
             wookiee_threads_b[thread_counter].start()
             
         thread_counter += 1
+        
+    try:
+        for wookiee_thread in wookiee_threads:
+            wookiee_thread.join()
+    except KeyboardInterrupt:
+        pass
+    
 else:
-    print('Missing port or port range parameters. Please run -h to see needed parameters.')
-    exit(2)
+    logger.error('Missing port or port range parameters. Please run -h to see needed parameters.')
+    exit(3)
 
-while True:
-    sleep(86400)
+logger.info("Stopping wookiee_broadcaster...")
