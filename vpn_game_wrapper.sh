@@ -29,8 +29,7 @@ echo "#   (4)  Majesty 2                   #"
 echo "#                                    #"
 echo "######################################"
 echo ""
-echo -n ">>> Choose your destiny: "
-read game
+read -p ">>> Choose your destiny: " game
 echo ">>> Outstanding!"
 
 #local VPN IP
@@ -96,8 +95,7 @@ esac
 
 #wait to revert on input
 echo ">>> VPN gaming setup complete!"
-echo -n ">>> Press any key to terminate..."
-read terminate
+read -p ">>> Press any key to terminate..."
 
 #terminate all broadcast replication processes
 for process in `ps -ef | grep ./wookiee_broadcaster | grep -v grep | awk '{print $2;}'`
@@ -124,4 +122,3 @@ sudo ufw delete allow from $LAN_NETWORK to any
 
 #disable ipv4 forwarding (if needed)
 sudo sysctl -w net.ipv4.ip_forward=0
-
