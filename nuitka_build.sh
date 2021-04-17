@@ -1,8 +1,8 @@
 #!/bin/bash
 
-rm wookiee_broadcaster
+rm -rf wookiee_broadcaster
 
-nuitka3 wookiee_broadcaster.py --lto
+nuitka3 wookiee_broadcaster.py --follow-imports --lto
 
 rm -rf wookiee_broadcaster.build
 
