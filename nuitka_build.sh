@@ -1,9 +1,6 @@
 #!/bin/bash
 
-rm -rf wookiee_broadcaster
-
-nuitka3 wookiee_broadcaster.py --follow-imports --lto
-
-rm -rf wookiee_broadcaster.build
-
+rm wookiee_broadcaster
+nuitka3 wookiee_broadcaster.py --follow-imports --remove-output --static-libpython=no
 mv wookiee_broadcaster.bin wookiee_broadcaster
+
