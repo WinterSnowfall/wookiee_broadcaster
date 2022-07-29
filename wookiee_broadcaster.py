@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
 @author: Winter Snowfall
-@version: 1.50
-@date: 06/11/2020
+@version: 1.51
+@date: 28/08/2022
 '''
 
 import socket
@@ -14,7 +14,7 @@ import signal
 import ipaddress
 
 ##logging configuration block
-logger_file_handler = logging.FileHandler('wookiee_broadcaster.log', mode='a', encoding='utf-8')
+logger_file_handler = logging.FileHandler('wookiee_broadcaster.log', encoding='utf-8')
 logger_format = '%(asctime)s %(levelname)s >>> %(message)s'
 logger_file_handler.setFormatter(logging.Formatter(logger_format))
 #logging level for other modules
@@ -61,20 +61,23 @@ def wookiee_broadcaster(input_intf, input_ip, output_intf, output_ip, output_net
 signal.signal(signal.SIGTERM, sigterm_handler)
 
 parser = argparse.ArgumentParser(description=('*** The Wookiee Broadcaster *** Replicates broadcast packets across network interfaces. '
-                                              'Useful for TCP/IP and UDP/IP based multiplayer LAN games enjoyed using VPN.'))
-optional = parser._action_groups.pop()
+                                              'Useful for TCP/IP and UDP/IP based multiplayer LAN games enjoyed using VPN.'), add_help=False)
+
 required = parser.add_argument_group('required arguments')
 group = required.add_mutually_exclusive_group()
+optional = parser.add_argument_group('optional arguments')
 
 required.add_argument('-i', '--input', help='Input interface name for listening to broadcast packets.', required=True)
 required.add_argument('-o', '--output', help='Output interface name, on which the broadcast requests will be replicated.', required=True)
 group.add_argument('-p', '--port', help='Port on which the broadcaster will listen for packets and also the replication port.')
 group.add_argument('-r', '--range', help=('A range of ports on which the broadcaster will listen for packets and also the replication ports. '
                                          'The accepted format is <start_port>:<end_port>.'))
-parser.add_argument('-b', '--bidirectional', help='Replicate broadcasts coming from the output interface to the input interface as well',
-                    action='store_true')
 
-parser._action_groups.append(optional)
+#reposition the standard -h flag at the bottom, in a custom optional section
+optional.add_argument('-h', '--help', action='help', help='show this help message and exit')
+optional.add_argument('-b', '--bidirectional', help='Replicate broadcasts coming from the output interface to the input interface as well',
+                      action='store_true')
+
 args = parser.parse_args()
 
 if args.input == args.output:
