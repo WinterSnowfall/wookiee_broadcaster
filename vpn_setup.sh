@@ -23,6 +23,18 @@ VPN_INTF="ham0"
 #local VPN IP
 VPN_LOCAL_IP=$(ifconfig $VPN_INTF | grep -w inet | awk '{print $2;}')
 #
+###################### IMPORTANT NOTE ###############################
+#
+# The following also need to be true on the LAN_PLAYER_IP host for
+# the forwarding to work properly:
+#
+# a) The local (LAN) IP of the host that is running the VPN 
+#    (and this script) must be configured as gateway on 
+#    LAN_PLAYER_IP's network interface
+# b) No ports should be blocked/firewalled between the two hosts,
+#    especially not the ones used for direct/broadcast traffic
+# c) 255.255.255.255 traffic should also be allowed on both hosts
+#
 #####################################################################
 
 echo "*** WinterSnowfall's VPN relay setup script for Linux ***"
