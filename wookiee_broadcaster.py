@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
 @author: Winter Snowfall
-@version: 1.60
-@date: 31/10/2022
+@version: 1.61
+@date: 06/11/2022
 '''
 
 import socket
@@ -32,7 +32,7 @@ def sigterm_handler(signum, frame):
     try:
         logger.debug('Stopping Wookiee Broadcaster due to SIGTERM...')
     except:
-        raise SystemExit(0)
+        pass
             
     raise SystemExit(0)
 
@@ -41,7 +41,7 @@ def sigint_handler(signum, frame):
     try:
         logger.debug('WU >>> Stopping Wookiee Broadcaster child process due to SIGINT...')
     except:
-        raise SystemExit(0)
+        pass
             
     raise SystemExit(0)
 
@@ -127,25 +127,27 @@ if __name__=="__main__":
         
         logger.info(f'Starting wookiee_broadcaster - listening on {args.input}/{BROADCAST_ADDRESS}:{port}, '
                     f'broadcasting on {args.output}/{output_ip}:{port}')
-        wookiee_thread = multiprocessing.Process(target=wookiee_broadcaster, 
-                                                 args=(args.input, input_ip, args.output, output_ip, output_netmask, port), 
-                                                 daemon=True)
-        wookiee_thread.start()
+        wookiee_proc = multiprocessing.Process(target=wookiee_broadcaster, 
+                                               args=(args.input, input_ip, args.output, 
+                                                     output_ip, output_netmask, port), 
+                                               daemon=True)
+        wookiee_proc.start()
         
         if args.bidirectional:
             logger.info('*** Running in bidirectional mode ***')
             logger.info(f'Starting wookiee_broadcaster - listening on {args.output}/{BROADCAST_ADDRESS}:{port}, '
                         f'broadcasting on {args.input}/{input_ip}:{port}')
-            wookiee_thread_b = multiprocessing.Process(target=wookiee_broadcaster, 
-                                                       args=(args.output, output_ip, args.input, input_ip, input_netmask, port), 
-                                                       daemon=True)
-            wookiee_thread_b.start()
+            wookiee_proc_b = multiprocessing.Process(target=wookiee_broadcaster, 
+                                                     args=(args.output, output_ip, args.input, 
+                                                           input_ip, input_netmask, port), 
+                                                     daemon=True)
+            wookiee_proc_b.start()
         
         try:
-            wookiee_thread.join()
+            wookiee_proc.join()
             
             if args.bidirectional:
-                wookiee_thread_b.join()
+                wookiee_proc_b.join()
                 
         except KeyboardInterrupt:
             #not sure why a second KeyboardInterrupt gets thrown here on shutdown at times
@@ -163,36 +165,38 @@ if __name__=="__main__":
         
         port_range = range(start_port, end_port + 1)
         
-        wookiee_threads = [None for i in range(len(port_range))]
-        wookiee_threads_b = wookiee_threads
-        thread_counter = 0
+        wookiee_procs = [None] * range(len(port_range))
+        wookiee_procs_b = wookiee_procs
+        proc_counter = 0
         
         for port in port_range:
             logger.info(f'Starting Wookiee Broadcaster - listening on {args.input}/{BROADCAST_ADDRESS}:{port}, '
                         f'broadcasting on {args.output}/{output_ip}:{port}')
-            wookiee_threads[thread_counter] = multiprocessing.Process(target=wookiee_broadcaster, 
-                                                                      args=(args.input, input_ip, args.output, output_ip, output_netmask, port),
-                                                                      daemon=True)
-            wookiee_threads[thread_counter].start()
+            wookiee_procs[proc_counter] = multiprocessing.Process(target=wookiee_broadcaster, 
+                                                                  args=(args.input, input_ip, args.output, 
+                                                                        output_ip, output_netmask, port),
+                                                                  daemon=True)
+            wookiee_procs[proc_counter].start()
             
             if args.bidirectional:
                 logger.info('*** Running in bidirectional mode ***')
                 logger.info(f'Starting Wookiee Broadcaster - listening on {args.output}/{BROADCAST_ADDRESS}:{port}, '
                             f'broadcasting on {args.input}/{input_ip}:{port}')
-                wookiee_threads_b[thread_counter] = multiprocessing.Process(target=wookiee_broadcaster, 
-                                                                            args=(args.output, output_ip, args.input, input_ip, input_netmask, port),
-                                                                            daemon=True)
-                wookiee_threads_b[thread_counter].start()
+                wookiee_procs_b[proc_counter] = multiprocessing.Process(target=wookiee_broadcaster, 
+                                                                        args=(args.output, output_ip, args.input, 
+                                                                              input_ip, input_netmask, port),
+                                                                        daemon=True)
+                wookiee_procs_b[proc_counter].start()
                 
-            thread_counter += 1
+            proc_counter += 1
             
         try:
-            for wookiee_thread in wookiee_threads:
-                wookiee_thread.join()
+            for wookiee_proc in wookiee_procs:
+                wookiee_proc.join()
                 
             if args.bidirectional:
-                for wookiee_thread_b in wookiee_threads_b:
-                    wookiee_thread_b.join()
+                for wookiee_proc_b in wookiee_procs_b:
+                    wookiee_proc_b.join()
                     
         except KeyboardInterrupt:
             #not sure why a second KeyboardInterrupt gets thrown here on shutdown at times
