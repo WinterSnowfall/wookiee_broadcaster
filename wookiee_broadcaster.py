@@ -106,8 +106,6 @@ if __name__=="__main__":
     #catch SIGTERM and exit gracefully
     signal.signal(signal.SIGTERM, sigterm_handler)
     
-    bidirectional_mode = False
-    
     parser = argparse.ArgumentParser(description=('*** The Wookiee Broadcaster *** Replicates broadcast packets across network interfaces. '
                                                   'Useful for TCP/IP and UDP/IP based multiplayer LAN games enjoyed using VPN.'), add_help=False)
     
@@ -124,8 +122,13 @@ if __name__=="__main__":
     optional.add_argument('-h', '--help', action='help', help='show this help message and exit')
     optional.add_argument('-b', '--bidirectional', help='Replicate broadcasts coming from the output interface to the input interface as well',
                           action='store_true')
+    optional.add_argument('-q', '--quiet', help='Disable all logging output.', action='store_true')
     
     args = parser.parse_args()
+    
+    #disable all logging in quiet mode
+    if args.quiet:
+        logging.disable(logging.CRITICAL)
     
     input_intf = bytes(args.input, 'utf-8')
     logger.debug(f'WB >>> input_intf: {args.input}')
@@ -201,6 +204,8 @@ if __name__=="__main__":
         bidirectional_mode = True
         #double the length of all elements if bidirectional mode is enabled
         port_range_len *= 2
+    else:
+        bidirectional_mode = False 
     
     wookiee_receiver_procs_list = [None] * port_range_len
     wookiee_broadcaster_procs_list = [None] * port_range_len

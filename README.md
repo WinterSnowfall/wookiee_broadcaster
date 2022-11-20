@@ -63,9 +63,12 @@ You can run **./wookiee_broadcaster.py -h** to get some hints, but in short, you
 
 * -i <input> = the name of the network interface (as listed by ifconfig) on which the script will listen for incoming broadcast packets
 * -o <output> = the name of the network interface (as listed by ifconfig) on which the script will replicate any broadcast packets received on the input interface
-* -p <port> = the port on which the script will listen for packets
-* -r <range> = a range of ports on which the script will listen for packets, separated by ":", ex: 10000:10010
-* -b = bidirectional mode. Will forward broadcast packets from the output interface back to the input interface as well, though, as explained earlier, this is not usually that useful unless the network zones have bilateral routing capabilities or are somehow bridged.
+* -p <ports> = the port or ports on which the script will listen for packets - use port ranges to specifiy multiple ports, separated by ":", ex: 10000:10010
+
+There are also a few optional command line arguments:
+
+* -b = bidirectional mode - will forward broadcast packets from the output interface back to the input interface as well, though, as explained earlier, this is not usually that useful unless the network zones have bilateral routing capabilities or are somehow bridged (defaults to **False** if unspecified)
+* -q = quiet mode - suppresses all logging messages (defaults to **False** if unspecified)
 
 To give you an example, you can run:
 
