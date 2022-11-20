@@ -43,5 +43,6 @@ case $1 in
     *)
         echo "Invalid option!"
         exit 1
+        ;;
 esac
 
