@@ -59,11 +59,14 @@ It's written for Linux, so you'll need a **Linux OS** with **python 3.6+** insta
 
 You can run **./wookiee_broadcaster.py -h** to get some hints, but in short, you'll need to specify:
 
+* -p <ports> = the port or ports on which the script will listen for packets - use port ranges to specify multiple ports, separated by ":", e.g.: 10000:10010
 * -i <input> = the name of the network interface (as listed by ifconfig) on which the script will listen for incoming broadcast packets
 * -o <output> = the name of the network interface (as listed by ifconfig) on which the script will replicate any broadcast packets received on the input interface
-* -p <port> = the port on which the script will listen for packets
-* -r <range> = a range of ports on which the script will listen for packets, separated by ":", ex: 10000:10010
-* -b = bidirectional mode. Will forward broadcast packets from the output interface back to the input interface as well, though, as explained earlier, this is not usually that useful unless the network zones have bilateral routing capabilities or are somehow bridged.
+
+There are also a few optional command line arguments:
+
+* -b = bidirectional mode - will forward broadcast packets from the output interface back to the input interface as well, though, as explained earlier, this is not usually that useful unless the network zones have bilateral routing capabilities or are somehow bridged (defaults to **False** if unspecified)
+* -q = quiet mode - suppresses all logging messages (defaults to **False** if unspecified)
 
 To give you an example, you can run:
 
@@ -72,6 +75,12 @@ sudo ./wookiee_broadcaster.py -i eth0 -o ham0 -p 5000 2>&1 > /dev/null &
 ```
 
 in order to start a background process which will replicate any broadcast packets received on port 5000, on the eth0 interface over to the ham0 interface, using the same output port (5000).
+
+### Will this work on Windows?
+
+Sadly, no. Because Windows and UDP broadcast sockets have a tense relationship at best, and the Wookiee Broadcaster needs to be able to listen to broadcast packets on a particular interface. This is unsupported on Windows, believe it or not, because Windows UDP sockets, depending on what Windows version you're using, will either listen for broadcast packets on ALL the network interfaces or only on the highest priority network interface (which is hardcoded, based on your system settings). Now you know why, among other things, Linux systems have established themselves as the backbone of the internet.
+
+You can still use Windows machines as your peers/gaming systems, but the routing logic, along with the Wookiee Broadcaster, need to happen exclusively on a Linux host. This host can potentially be a Linux VM running on one of your Windows systems, using a bridged network adapter with its own LAN MAC/IP address and with a VPN service deployed on it (or a bridged adapter to a local VPN network).
 
 ### How come you're only listening to broadcasts on 255.255.255.255? There are plenty of other potential broadcast addresses, including local ones, like 10.0.0.255!
 
