@@ -5,7 +5,7 @@
 # you plan to run this script.
 
 ######### SCRIPT PARAMETERS - MUST BE CONFIGURED PROPERLY ###########
-#
+
 #IP of the LAN player
 LAN_PLAYER_IP="10.0.0.2"
 #IP of the VPN player
@@ -22,19 +22,19 @@ LAN_INTF="eth0"
 VPN_INTF="ham0"
 #local VPN IP
 VPN_LOCAL_IP=$(ifconfig $VPN_INTF | grep -w inet | awk '{print $2;}')
-#
-###################### IMPORTANT NOTE ###############################
-#
-# The following also need to be true on the LAN_PLAYER_IP host for
-# the forwarding to work properly:
-#
-# a) The local (LAN) IP of the host that is running the VPN 
-#    (and this script) must be configured as gateway on 
-#    LAN_PLAYER_IP's network interface
-# b) No ports should be blocked/firewalled between the two hosts,
-#    especially not the ones used for direct/broadcast traffic
-# c) 255.255.255.255 traffic should also be allowed on both hosts
-#
+
+######################### IMPORTANT NOTE ############################
+#                                                                   #
+# The following also need to be true on the LAN_PLAYER_IP host for  #
+# the forwarding to work properly:                                  #
+#                                                                   #
+# a) The local (LAN) IP of the host that is running the VPN         #
+#    (and this script) must be configured as gateway on             #
+#    LAN_PLAYER_IP's network interface                              #
+# b) No ports should be blocked/firewalled between the two hosts,   #
+#    especially not the ones used for direct/broadcast traffic      #
+# c) 255.255.255.255 traffic must also be allowed on both hosts     #
+#                                                                   #
 #####################################################################
 
 echo "*** WinterSnowfall's VPN relay setup script for Linux ***"
@@ -53,7 +53,7 @@ echo "####################################################"
 echo ""
 read -p ">>> Pick a game from the list: " game
 
-#ensure ipv4 forarding between adapters is enabled
+#ensure ipv4 forwarding between adapters is enabled
 sudo sysctl -w net.ipv4.ip_forward=1
 
 #add generic ufw rules to allow traffic
@@ -69,7 +69,7 @@ case $game in
         echo ">>> Setting up Torchlight 2..."
         #broadcast NAT
         sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 4549 -j TEE --gateway $LAN_BROADCAST_IP
-        ./wookiee_broadcaster -i $LAN_INTF -o $VPN_INTF -p 4549 >/dev/null 2>&1 &
+        ./wookiee_broadcaster -p 4549 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
         #regular NAT
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 4549 -j DNAT --to-destination $LAN_PLAYER_IP
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 30000:65000 -j DNAT --to-destination $LAN_PLAYER_IP
@@ -80,7 +80,7 @@ case $game in
         echo ">>> Setting up Worms Armageddon..."
         #broadcast NAT
         sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 17012 -j TEE --gateway $LAN_BROADCAST_IP
-        ./wookiee_broadcaster -i $LAN_INTF -o $VPN_INTF -p 17012 >/dev/null 2>&1 &
+        ./wookiee_broadcaster -p 17012 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
         #regular NAT
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 17012 -j DNAT --to-destination $LAN_PLAYER_IP
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p tcp -s $VPN_PLAYER_IP --dport 17011 -j DNAT --to-destination $LAN_PLAYER_IP
@@ -93,7 +93,7 @@ case $game in
         echo ">>> Setting up Divinty Original Sin - Enhanced Edition..."
         #broadcast NAT
         sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 23243:23262 -j TEE --gateway $LAN_BROADCAST_IP
-        ./wookiee_broadcaster -i $LAN_INTF -o $VPN_INTF -r 23243:23262 >/dev/null 2>&1 &
+        ./wookiee_broadcaster -p 23243:23262 -i $LAN_INTF -o $VPN_INTF -q >> wookiee_broadcaster.log 2>&1 &
         #regular NAT
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 23243:23262 -j DNAT --to-destination $LAN_PLAYER_IP
         sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 23243:23262 -j SNAT --to-source $VPN_LOCAL_IP
@@ -102,7 +102,7 @@ case $game in
         echo ">>> Setting up Majesty 2..."
         #broadcast NAT
         sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 3210 -j TEE --gateway $LAN_BROADCAST_IP
-        ./wookiee_broadcaster -i $LAN_INTF -o $VPN_INTF -p 3210 >/dev/null 2>&1 &
+        ./wookiee_broadcaster -p 3210 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
         #regular NAT
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 3210 -j DNAT --to-destination $LAN_PLAYER_IP
         sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 3210 -j SNAT --to-source $VPN_LOCAL_IP
