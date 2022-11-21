@@ -195,7 +195,7 @@ if __name__=="__main__":
         
     #if only a single port is specified, store that in the range
     else:
-        if ports < PORTS_RANGE_LOW_BOUND or ports > PORTS_RANGE_HIGH_BOUND:
+        if ports[0] < PORTS_RANGE_LOW_BOUND or ports[0] > PORTS_RANGE_HIGH_BOUND:
             logger.critical(f'WB >>> Please use a valid port, in the {PORTS_RANGE_LOW_BOUND}:{PORTS_RANGE_HIGH_BOUND} range.')
             raise SystemExit(4)
         
