@@ -1,6 +1,6 @@
 # The Wookiee Broadcaster
 
-A broadcast packet replication script for **Linux**, written in **Python 3**, which enables TCP/IP (or UDP/IP) LAN applications to communicate across two separate network interfaces/zones. This is particularly useful for playing LAN games via VPN, especially when several of the players reside behind NAT and only one of them has a VPN bridge that allows remote players to join.
+A broadcast packet replication script for **Linux**, written in **Python 3**, which enables UDP broadcast LAN applications to communicate across two separate network interfaces/zones. This is particularly useful for playing LAN games via VPN, especially when several of the players reside behind NAT and only one of them has a VPN bridge that allows remote players to join.
 
 ### But why code YABU (yet another broadcasting utility)?
 
