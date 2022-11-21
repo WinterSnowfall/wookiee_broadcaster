@@ -68,6 +68,8 @@ There are also a few optional command line arguments:
 * -b = bidirectional mode - will forward broadcast packets from the output interface back to the input interface as well, though, as explained earlier, this is not usually that useful unless the network zones have bilateral routing capabilities or are somehow bridged (defaults to **False** if unspecified)
 * -q = quiet mode - suppresses all logging messages (defaults to **False** if unspecified)
 
+**Note**: All port values must be specified in the bindable, non-protected range of **1024:65535**.
+
 To give you an example, you can run:
 
 ```

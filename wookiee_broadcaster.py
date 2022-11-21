@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
 @author: Winter Snowfall
-@version: 1.80
-@date: 20/11/2022
+@version: 2.00
+@date: 22/11/2022
 '''
 
 import socket
@@ -24,6 +24,9 @@ logger.setLevel(logging.INFO) #DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 #constants
 BROADCAST_ADDRESS = '255.255.255.255'
+#valid (and bindable) port range boundaries
+PORTS_RANGE_LOW_BOUND = 1024
+PORTS_RANGE_HIGH_BOUND = 65535
 #broadcast UDP packets are not typically all that large
 RECV_BUFFER_SIZE = 2048 #bytes
 PACKET_QUEUE_SIZE = 4 #packets
@@ -183,11 +186,19 @@ if __name__=="__main__":
             logger.critical('WB >>> Incorrect use of the port range parameter. Please run -h to see needed parameters.')
             raise SystemExit(3)
         
+        if start_port < PORTS_RANGE_LOW_BOUND or end_port > PORTS_RANGE_HIGH_BOUND:
+            logger.critical(f'WB >>> Please use valid ports, in the {PORTS_RANGE_LOW_BOUND}:{PORTS_RANGE_HIGH_BOUND} range.')
+            raise SystemExit(4)
+        
         port_range = range(start_port, end_port + 1)
         port_range_len = len(port_range)
         
     #if only a single port is specified, store that in the range
     else:
+        if ports < PORTS_RANGE_LOW_BOUND or ports > PORTS_RANGE_HIGH_BOUND:
+            logger.critical(f'WB >>> Please use a valid port, in the {PORTS_RANGE_LOW_BOUND}:{PORTS_RANGE_HIGH_BOUND} range.')
+            raise SystemExit(4)
+        
         port_range = ports
         port_range_len = 1
         
@@ -198,7 +209,7 @@ if __name__=="__main__":
 
     if input_intf == output_intf:
         logger.critical('WB >>> It\'s not wise to upset a wookiee...')
-        raise SystemExit(4)
+        raise SystemExit(5)
 
     try:
         input_ip_query_subprocess = subprocess.Popen(''.join(('ifconfig ', args.input_intf, ' | grep -w inet | awk \'{print $2 " " $4;}\'')), 
@@ -212,10 +223,10 @@ if __name__=="__main__":
         
         if input_ip == '':
             logger.critical(f'Invalid input interface {args.input}. Please retry with a valid interface name.')
-            raise SystemExit(5)
+            raise SystemExit(6)
     except:
         logger.critical(f'Invalid input interface {args.input}. Please retry with a valid interface name.')
-        raise SystemExit(5)
+        raise SystemExit(6)
 
     try:
         output_ip_query_subprocess = subprocess.Popen(''.join(('ifconfig ', args.output_intf, ' | grep -w inet | awk \'{print $2 " " $4;}\'')), 
@@ -229,10 +240,10 @@ if __name__=="__main__":
         
         if output_ip == '':
             logger.critical(f'WB >>> Invalid output interface {args.output}. Please retry with a valid interface name.')
-            raise SystemExit(6)
+            raise SystemExit(7)
     except:
         logger.critical(f'WB >>> Invalid output interface {args.output}. Please retry with a valid interface name.')
-        raise SystemExit(6)
+        raise SystemExit(7)
     
     if args.bidirectional:
         logger.info('*** Running in bidirectional mode ***')
@@ -241,7 +252,7 @@ if __name__=="__main__":
         #double the length of all elements if bidirectional mode is enabled
         port_range_len *= 2
     else:
-        bidirectional_mode = False 
+        bidirectional_mode = False
     
     wookiee_receiver_procs_list = [None] * port_range_len
     wookiee_broadcaster_procs_list = [None] * port_range_len
