@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
 @author: Winter Snowfall
-@version: 2.00
-@date: 22/11/2022
+@version: 2.20
+@date: 26/11/2022
 '''
 
 import socket
@@ -36,7 +36,7 @@ PROCESS_SPAWN_WAIT_INTERVAL = 0.1 #seconds
 def sigterm_handler(signum, frame):
     #exceptions may happen here as well due to logger syncronization mayhem on shutdown
     try:
-        logger.debug('Stopping Wookiee Broadcaster due to SIGTERM...')
+        logger.debug('WU >>> Stopping Wookiee Broadcaster process due to SIGTERM...')
     except:
         pass
             
@@ -45,7 +45,7 @@ def sigterm_handler(signum, frame):
 def sigint_handler(signum, frame):
     #exceptions may happen here as well due to logger syncronization mayhem on shutdown
     try:
-        logger.debug('WU >>> Stopping Wookiee Broadcaster child process due to SIGINT...')
+        logger.debug('WU >>> Stopping Wookiee Broadcaster process due to SIGINT...')
     except:
         pass
             
@@ -53,29 +53,31 @@ def sigint_handler(signum, frame):
 
 def wookiee_receiver(process_no, input_intf, input_ip, 
                      output_network, port, exit_event, queue):
+    #catch SIGTERM and exit gracefully
+    signal.signal(signal.SIGTERM, sigterm_handler)
     #catch SIGINT and exit gracefully
     signal.signal(signal.SIGINT, sigint_handler)
     
     logger.info(f'WB P{process_no} --- Starting receiver worker process...')
     
-    receiver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    receiver.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    
     try:
-        receiver.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, input_intf)
-    except AttributeError:
-        logger.critical(f'WB P{process_no} --- SO_BINDTODEVICE is not available. Windows is NOT supported!')
-        exit_event.set()
-    except OSError:
-        logger.critical(f'WB P{process_no} --- Interface not found or unavailable.')
-        exit_event.set()
-    try:
-        receiver.bind((BROADCAST_ADDRESS, port))
-    except OSError:
-        logger.critical(f'WB P{process_no} --- Interface unavailable or port {port} is in use.')
-        exit_event.set()
-    
-    try:
+        receiver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        receiver.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        
+        try:
+            receiver.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, input_intf)
+        except AttributeError:
+            logger.critical(f'WB P{process_no} --- SO_BINDTODEVICE is not available. Windows is NOT supported!')
+            exit_event.set()
+        except OSError:
+            logger.critical(f'WB P{process_no} --- Interface not found or unavailable.')
+            exit_event.set()
+        try:
+            receiver.bind((BROADCAST_ADDRESS, port))
+        except OSError:
+            logger.critical(f'WB P{process_no} --- Interface unavailable or port {port} is in use.')
+            exit_event.set()
+
         while not exit_event.is_set():
             data, addr = receiver.recvfrom(RECV_BUFFER_SIZE)
             logger.debug(f'WB P{process_no} --- Received a packet from {addr[0]}:{addr[1]}...')
@@ -86,9 +88,12 @@ def wookiee_receiver(process_no, input_intf, input_ip,
             else:
                 #if such packets are intercepted, traffic to the desired endpoint may be lost
                 logger.warning(f'WB P{process_no} --- Ignoring a packet not intended for replication...')
-    except:
+    
+    except SystemExit:
         pass
+    
     finally:
+        
         try:
             logger.debug(f'WB P{process_no} --- Closing receiver socket...')
             receiver.close()
@@ -100,37 +105,42 @@ def wookiee_receiver(process_no, input_intf, input_ip,
     
 def wookiee_broadcaster(process_no, output_intf, output_ip, 
                         port, exit_event, queue):
+    #catch SIGTERM and exit gracefully
+    signal.signal(signal.SIGTERM, sigterm_handler)
     #catch SIGINT and exit gracefully
     signal.signal(signal.SIGINT, sigint_handler)
     
     logger.info(f'WB P{process_no} +++ Starting broadcaster worker process...')
     
-    broadcaster = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-    broadcaster.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    try:
+        broadcaster = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+        broadcaster.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        
+        try:
+            broadcaster.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, output_intf)
+        except AttributeError:
+            logger.critical(f'WB P{process_no} +++ SO_BINDTODEVICE is not available. Windows is NOT supported!')
+            exit_event.set()
+        except OSError:
+            logger.critical(f'WB P{process_no} +++ Interface not found or unavailable.')
+            exit_event.set()
+        try:
+            broadcaster.bind((output_ip, port))
+        except OSError:
+            logger.critical(f'WB P{process_no} +++ Interface unavailable or port {port} is in use.')
+            exit_event.set()
     
-    try:
-        broadcaster.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, output_intf)
-    except AttributeError:
-        logger.critical(f'WB P{process_no} +++ SO_BINDTODEVICE is not available. Windows is NOT supported!')
-        exit_event.set()
-    except OSError:
-        logger.critical(f'WB P{process_no} +++ Interface not found or unavailable.')
-        exit_event.set()
-    try:
-        broadcaster.bind((output_ip, port))
-    except OSError:
-        logger.critical(f'WB P{process_no} +++ Interface unavailable or port {port} is in use.')
-        exit_event.set()
-    
-    try:
         while not exit_event.is_set():
             data = queue.get()
             
             logger.info(f'WB P{process_no} +++ Replicated a packet on {output_ip}:{port}, broadcasting to {BROADCAST_ADDRESS}')
             broadcaster.sendto(data, (BROADCAST_ADDRESS, port))
-    except:
+    
+    except SystemExit:
         pass
+    
     finally:
+        
         try:
             logger.debug(f'WB P{process_no} +++ Closing broadcaster socket...')
             broadcaster.close()
@@ -143,6 +153,8 @@ def wookiee_broadcaster(process_no, output_intf, output_ip,
 if __name__=="__main__":
     #catch SIGTERM and exit gracefully
     signal.signal(signal.SIGTERM, sigterm_handler)
+    #catch SIGINT and exit gracefully
+    signal.signal(signal.SIGINT, sigint_handler)
     
     parser = argparse.ArgumentParser(description=('*** The Wookiee Broadcaster *** Replicates broadcast packets across network interfaces. '
                                                   'Useful for TCP/IP and UDP/IP based multiplayer LAN games enjoyed using VPN.'), add_help=False)
@@ -308,19 +320,27 @@ if __name__=="__main__":
         proc_counter += 1
         
     try:
+        #wait for the exit event or until an interrupt is received
+        exit_event.wait()
+        
+    except SystemExit:
+        #exceptions may happen here as well due to logger syncronization mayhem on shutdown
+        try:
+            exit_event.set()
+            logger.info('WB >>> Stopping Wookiee Broadcaster...')
+        except:
+            exit_event.set()
+            
+    finally:
+        logger.info('WB >>> Waiting for the receiver and broadcaster processes to complete...')
+        
         for wookiee_proc in wookiee_receiver_procs_list:
             wookiee_proc.join()
         
         for wookiee_proc in wookiee_broadcaster_procs_list:
             wookiee_proc.join()
-                
-    except KeyboardInterrupt:
-        #not sure why a second KeyboardInterrupt gets thrown here on shutdown at times
-        try:
-            logger.info('WB >>> Stopping Wookiee Broadcaster due to keyboard interrupt...')
-            exit_event.set()
-        except KeyboardInterrupt:
-            exit_event.set()
+            
+        logger.info('WB >>> The receiver and broadcaster processes have been stopped.')
     
     logger.info('WB >>> Ruow! (Goodbye)')
     
