@@ -39,7 +39,7 @@ def sigterm_handler(signum, frame):
         logger.debug('WU >>> Stopping Wookiee Broadcaster process due to SIGTERM...')
     except:
         pass
-            
+    
     raise SystemExit(0)
 
 def sigint_handler(signum, frame):
@@ -48,10 +48,10 @@ def sigint_handler(signum, frame):
         logger.debug('WU >>> Stopping Wookiee Broadcaster process due to SIGINT...')
     except:
         pass
-            
+    
     raise SystemExit(0)
 
-def wookiee_receiver(process_no, input_intf, input_ip, 
+def wookiee_receiver(process_no, input_intf, input_ip,
                      output_network, port, exit_event, queue):
     #catch SIGTERM and exit gracefully
     signal.signal(signal.SIGTERM, sigterm_handler)
@@ -100,10 +100,10 @@ def wookiee_receiver(process_no, input_intf, input_ip,
             logger.debug(f'WB P{process_no} --- Receiver socket closed.')
         except:
             pass
-        
-    logger.info(f'WB P{process_no} --- Stopped receiver worker process.')
     
-def wookiee_broadcaster(process_no, output_intf, output_ip, 
+    logger.info(f'WB P{process_no} --- Stopped receiver worker process.')
+
+def wookiee_broadcaster(process_no, output_intf, output_ip,
                         port, exit_event, queue):
     #catch SIGTERM and exit gracefully
     signal.signal(signal.SIGTERM, sigterm_handler)
@@ -129,7 +129,7 @@ def wookiee_broadcaster(process_no, output_intf, output_ip,
         except OSError:
             logger.critical(f'WB P{process_no} +++ Interface unavailable or port {port} is in use.')
             exit_event.set()
-    
+        
         while not exit_event.is_set():
             data = queue.get()
             
@@ -147,10 +147,10 @@ def wookiee_broadcaster(process_no, output_intf, output_ip,
             logger.debug(f'WB P{process_no} +++ Broadcaster socket closed.')
         except:
             pass
-            
+    
     logger.info(f'WB P{process_no} +++ Stopped broadcaster worker process.')
-            
-if __name__=="__main__":
+
+if __name__ == "__main__":
     #catch SIGTERM and exit gracefully
     signal.signal(signal.SIGTERM, sigterm_handler)
     #catch SIGINT and exit gracefully
@@ -179,7 +179,7 @@ if __name__=="__main__":
     #disable all logging in quiet mode
     if args.quiet:
         logging.disable(logging.CRITICAL)
-        
+    
     #handle ranges as default, and single ports as a special case
     try:
         ports = [int(port) for port in args.ports.split(':')]
@@ -193,7 +193,7 @@ if __name__=="__main__":
         except:
             logger.critical('WB >>> Laugh it up, fuzzball...')
             raise SystemExit(2)
-    
+        
         if end_port <= start_port:
             logger.critical('WB >>> Incorrect use of the port range parameter. Please run -h to see needed parameters.')
             raise SystemExit(3)
@@ -204,7 +204,7 @@ if __name__=="__main__":
         
         port_range = range(start_port, end_port + 1)
         port_range_len = len(port_range)
-        
+    
     #if only a single port is specified, store that in the range
     else:
         if ports[0] < PORTS_RANGE_LOW_BOUND or ports[0] > PORTS_RANGE_HIGH_BOUND:
@@ -213,16 +213,16 @@ if __name__=="__main__":
         
         port_range = ports
         port_range_len = 1
-        
+    
     input_intf = bytes(args.input_intf, 'utf-8')
     logger.debug(f'WB >>> input_intf: {args.input_intf}')
     output_intf = bytes(args.output_intf, 'utf-8')
     logger.debug(f'WB >>> output_intf: {args.output_intf}')
-
+    
     if input_intf == output_intf:
         logger.critical('WB >>> It\'s not wise to upset a wookiee...')
         raise SystemExit(5)
-
+    
     try:
         input_ip_query_subprocess = subprocess.Popen(''.join(('ifconfig ', args.input_intf, ' | grep -w inet | awk \'{print $2 " " $4;}\'')), 
                                                      shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
@@ -259,7 +259,7 @@ if __name__=="__main__":
     
     if args.bidirectional:
         logger.info('*** Running in bidirectional mode ***')
-                
+        
         bidirectional_mode = True
         #double the length of all elements if bidirectional mode is enabled
         port_range_len *= 2
@@ -281,7 +281,7 @@ if __name__=="__main__":
         wookiee_receiver_procs_list[proc_counter] = multiprocessing.Process(target=wookiee_receiver, 
                                                                             args=(proc_counter + 1, input_intf, input_ip, 
                                                                                   output_network, port, exit_event, 
-                                                                                  broadcast_queue_list[proc_counter]),
+                                                                                  broadcast_queue_list[proc_counter]), 
                                                                             daemon=True)
         wookiee_receiver_procs_list[proc_counter].start()
         
@@ -289,7 +289,7 @@ if __name__=="__main__":
         
         wookiee_broadcaster_procs_list[proc_counter] = multiprocessing.Process(target=wookiee_broadcaster, 
                                                                                args=(proc_counter + 1, output_intf, output_ip, 
-                                                                                     port, exit_event, broadcast_queue_list[proc_counter]),
+                                                                                     port, exit_event, broadcast_queue_list[proc_counter]), 
                                                                                daemon=True)
         wookiee_broadcaster_procs_list[proc_counter].start()
         
@@ -302,8 +302,8 @@ if __name__=="__main__":
                         f'broadcasting on {args.input_intf}/{input_ip}:{port}')
             wookiee_receiver_procs_list[proc_counter] = multiprocessing.Process(target=wookiee_receiver, 
                                                                                 args=(proc_counter + 1, output_intf, output_ip, 
-                                                                                      input_network, port, exit_event,
-                                                                                      broadcast_queue_list[proc_counter]),
+                                                                                      input_network, port, exit_event, 
+                                                                                      broadcast_queue_list[proc_counter]), 
                                                                                 daemon=True)
             wookiee_receiver_procs_list[proc_counter].start()
             
@@ -311,18 +311,18 @@ if __name__=="__main__":
             
             wookiee_broadcaster_procs_list[proc_counter] = multiprocessing.Process(target=wookiee_broadcaster, 
                                                                                    args=(proc_counter + 1, input_intf, input_ip, 
-                                                                                         port, exit_event, broadcast_queue_list[proc_counter]),
+                                                                                         port, exit_event, broadcast_queue_list[proc_counter]), 
                                                                                    daemon=True)
             wookiee_broadcaster_procs_list[proc_counter].start()
             
             sleep(PROCESS_SPAWN_WAIT_INTERVAL)
-            
-        proc_counter += 1
         
+        proc_counter += 1
+    
     try:
         #wait for the exit event or until an interrupt is received
         exit_event.wait()
-        
+    
     except SystemExit:
         #exceptions may happen here as well due to logger syncronization mayhem on shutdown
         try:
@@ -330,7 +330,7 @@ if __name__=="__main__":
             logger.info('WB >>> Stopping Wookiee Broadcaster...')
         except:
             exit_event.set()
-            
+    
     finally:
         logger.info('WB >>> Waiting for the receiver and broadcaster processes to complete...')
         
@@ -339,8 +339,7 @@ if __name__=="__main__":
         
         for wookiee_proc in wookiee_broadcaster_procs_list:
             wookiee_proc.join()
-            
+        
         logger.info('WB >>> The receiver and broadcaster processes have been stopped.')
     
     logger.info('WB >>> Ruow! (Goodbye)')
-    
