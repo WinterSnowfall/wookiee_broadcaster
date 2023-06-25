@@ -1,18 +1,18 @@
 #!/bin/bash
 
-#LAN network with netmask
+# LAN network with netmask
 LAN_NETWORK="10.0.0.0/24"
-#default gateway IP
+# default gateway IP
 DEFAULT_GATEWAY_IP="10.0.0.1"
-#VPN gateway IP
+# VPN gateway IP
 VPN_GATEWAY_IP="10.0.0.8"
-#dhcp switch for local connection
+# dhcp switch for local connection
 LOCAL_DHCP=false
-#local network manager connection name
+# local network manager connection name
 LOCAL_NM_CONNECTION_NAME="Wired connection 1"
-#local network interface name
+# local network interface name
 LOCAL_INTF="eth0"
-#local IP, based on the interface name
+# local IP, based on the interface name
 LOCAL_IP=$(ifconfig $LOCAL_INTF | grep -w inet | awk '{print $2;}')
 
 case $1 in

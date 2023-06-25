@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
 @author: Winter Snowfall
-@version: 2.20
-@date: 26/11/2022
+@version: 2.22
+@date: 24/06/2023
 '''
 
 import socket
@@ -14,27 +14,26 @@ import signal
 import ipaddress
 from time import sleep
 
-##logging configuration block
-logger_format = '%(asctime)s %(levelname)s >>> %(message)s'
-#logging level for other modules
-logging.basicConfig(format=logger_format, level=logging.ERROR) #DEBUG, INFO, WARNING, ERROR, CRITICAL
+# logging configuration block
+LOGGER_FORMAT = '%(asctime)s %(levelname)s >>> %(message)s'
+# logging level for other modules
+logging.basicConfig(format=LOGGER_FORMAT, level=logging.ERROR)
 logger = logging.getLogger(__name__)
-#logging level for current logger
-logger.setLevel(logging.INFO) #DEBUG, INFO, WARNING, ERROR, CRITICAL
+# logging level for current logger
+logger.setLevel(logging.INFO) # DEBUG, INFO, WARNING, ERROR, CRITICAL
 
-#constants
+# constants
 BROADCAST_ADDRESS = '255.255.255.255'
-#valid (and bindable) port range boundaries
-PORTS_RANGE_LOW_BOUND = 1024
-PORTS_RANGE_HIGH_BOUND = 65535
-#broadcast UDP packets are not typically all that large
+# valid (and bindable) port range boundaries
+PORTS_RANGE = (1024, 65535)
+# broadcast UDP packets are not typically all that large
 RECV_BUFFER_SIZE = 2048 #bytes
 PACKET_QUEUE_SIZE = 4 #packets
-#allow spawned processes to fully initialize before the process is started
+# allow spawned processes to fully initialize before the process is started
 PROCESS_SPAWN_WAIT_INTERVAL = 0.1 #seconds
 
 def sigterm_handler(signum, frame):
-    #exceptions may happen here as well due to logger syncronization mayhem on shutdown
+    # exceptions may happen here as well due to logger syncronization mayhem on shutdown
     try:
         logger.debug('WU >>> Stopping Wookiee Broadcaster process due to SIGTERM...')
     except:
@@ -43,7 +42,7 @@ def sigterm_handler(signum, frame):
     raise SystemExit(0)
 
 def sigint_handler(signum, frame):
-    #exceptions may happen here as well due to logger syncronization mayhem on shutdown
+    # exceptions may happen here as well due to logger syncronization mayhem on shutdown
     try:
         logger.debug('WU >>> Stopping Wookiee Broadcaster process due to SIGINT...')
     except:
@@ -51,11 +50,11 @@ def sigint_handler(signum, frame):
     
     raise SystemExit(0)
 
-def wookiee_receiver(process_no, input_intf, input_ip,
+def wookiee_receiver(process_no, input_intf, input_ip, 
                      output_network, port, exit_event, queue):
-    #catch SIGTERM and exit gracefully
+    # catch SIGTERM and exit gracefully
     signal.signal(signal.SIGTERM, sigterm_handler)
-    #catch SIGINT and exit gracefully
+    # catch SIGINT and exit gracefully
     signal.signal(signal.SIGINT, sigint_handler)
     
     logger.info(f'WB P{process_no} --- Starting receiver worker process...')
@@ -86,14 +85,13 @@ def wookiee_receiver(process_no, input_intf, input_ip,
             if addr[0] != input_ip and ipaddress.IPv4Address(addr[0]) not in output_network:
                 queue.put(data)
             else:
-                #if such packets are intercepted, traffic to the desired endpoint may be lost
+                # if such packets are intercepted, traffic to the desired endpoint may be lost
                 logger.warning(f'WB P{process_no} --- Ignoring a packet not intended for replication...')
     
     except SystemExit:
         pass
     
     finally:
-        
         try:
             logger.debug(f'WB P{process_no} --- Closing receiver socket...')
             receiver.close()
@@ -103,11 +101,11 @@ def wookiee_receiver(process_no, input_intf, input_ip,
     
     logger.info(f'WB P{process_no} --- Stopped receiver worker process.')
 
-def wookiee_broadcaster(process_no, output_intf, output_ip,
+def wookiee_broadcaster(process_no, output_intf, output_ip, 
                         port, exit_event, queue):
-    #catch SIGTERM and exit gracefully
+    # catch SIGTERM and exit gracefully
     signal.signal(signal.SIGTERM, sigterm_handler)
-    #catch SIGINT and exit gracefully
+    # catch SIGINT and exit gracefully
     signal.signal(signal.SIGINT, sigint_handler)
     
     logger.info(f'WB P{process_no} +++ Starting broadcaster worker process...')
@@ -140,7 +138,6 @@ def wookiee_broadcaster(process_no, output_intf, output_ip,
         pass
     
     finally:
-        
         try:
             logger.debug(f'WB P{process_no} +++ Closing broadcaster socket...')
             broadcaster.close()
@@ -151,9 +148,9 @@ def wookiee_broadcaster(process_no, output_intf, output_ip,
     logger.info(f'WB P{process_no} +++ Stopped broadcaster worker process.')
 
 if __name__ == "__main__":
-    #catch SIGTERM and exit gracefully
+    # catch SIGTERM and exit gracefully
     signal.signal(signal.SIGTERM, sigterm_handler)
-    #catch SIGINT and exit gracefully
+    # catch SIGINT and exit gracefully
     signal.signal(signal.SIGINT, sigint_handler)
     
     parser = argparse.ArgumentParser(description=('*** The Wookiee Broadcaster *** Replicates broadcast packets across network interfaces. '
@@ -168,7 +165,7 @@ if __name__ == "__main__":
     required.add_argument('-i', '--input-intf', help='Input interface name for listening to broadcast packets.', required=True)
     required.add_argument('-o', '--output-intf', help='Output interface name, on which the broadcast requests will be replicated.', required=True)
     
-    #reposition the standard -h flag at the bottom, in a custom optional section
+    # reposition the standard -h flag at the bottom, in a custom optional section
     optional.add_argument('-h', '--help', action='help', help='show this help message and exit')
     optional.add_argument('-b', '--bidirectional', help='Replicate broadcasts coming from the output interface to the input interface as well',
                           action='store_true')
@@ -176,11 +173,11 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    #disable all logging in quiet mode
+    # disable all logging in quiet mode
     if args.quiet:
         logging.disable(logging.CRITICAL)
     
-    #handle ranges as default, and single ports as a special case
+    # handle ranges by default, and single ports as a special case
     try:
         ports = [int(port) for port in args.ports.split(':')]
     except:
@@ -198,17 +195,17 @@ if __name__ == "__main__":
             logger.critical('WB >>> Incorrect use of the port range parameter. Please run -h to see needed parameters.')
             raise SystemExit(3)
         
-        if start_port < PORTS_RANGE_LOW_BOUND or end_port > PORTS_RANGE_HIGH_BOUND:
-            logger.critical(f'WB >>> Please use valid ports, in the {PORTS_RANGE_LOW_BOUND}:{PORTS_RANGE_HIGH_BOUND} range.')
+        if start_port < PORTS_RANGE[0] or end_port > PORTS_RANGE[1]:
+            logger.critical(f'WB >>> Please use valid ports, in the {PORTS_RANGE[0]}:{PORTS_RANGE[1]} range.')
             raise SystemExit(4)
         
         port_range = range(start_port, end_port + 1)
         port_range_len = len(port_range)
     
-    #if only a single port is specified, store that in the range
+    # if only a single port is specified, store that in the range
     else:
-        if ports[0] < PORTS_RANGE_LOW_BOUND or ports[0] > PORTS_RANGE_HIGH_BOUND:
-            logger.critical(f'WB >>> Please use a valid port, in the {PORTS_RANGE_LOW_BOUND}:{PORTS_RANGE_HIGH_BOUND} range.')
+        if ports[0] < PORTS_RANGE[0] or ports[0] > PORTS_RANGE[1]:
+            logger.critical(f'WB >>> Please use a valid port, in the {PORTS_RANGE[0]}:{PORTS_RANGE[1]} range.')
             raise SystemExit(4)
         
         port_range = ports
@@ -261,7 +258,7 @@ if __name__ == "__main__":
         logger.info('*** Running in bidirectional mode ***')
         
         bidirectional_mode = True
-        #double the length of all elements if bidirectional mode is enabled
+        # double the length of all elements if bidirectional mode is enabled
         port_range_len *= 2
     else:
         bidirectional_mode = False
@@ -320,11 +317,11 @@ if __name__ == "__main__":
         proc_counter += 1
     
     try:
-        #wait for the exit event or until an interrupt is received
+        # wait for the exit event or until an interrupt is received
         exit_event.wait()
     
     except SystemExit:
-        #exceptions may happen here as well due to logger syncronization mayhem on shutdown
+        # exceptions may happen here as well due to logger syncronization mayhem on shutdown
         try:
             exit_event.set()
             logger.info('WB >>> Stopping Wookiee Broadcaster...')
