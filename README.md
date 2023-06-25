@@ -73,7 +73,7 @@ There are also a few optional command line arguments:
 To give you an example, you can run:
 
 ```
-sudo ./wookiee_broadcaster.py -i eth0 -o ham0 -p 5000 2>&1 > /dev/null &
+./wookiee_broadcaster.py -i eth0 -o ham0 -p 5000 2>&1 > /dev/null &
 ```
 
 in order to start a background process which will replicate any broadcast packets received on port 5000, on the eth0 interface over to the ham0 interface, using the same output port (5000).
