@@ -6,22 +6,26 @@
 
 ######### SCRIPT PARAMETERS - MUST BE CONFIGURED PROPERLY ###########
 
-#IP of the LAN player
+# IP of the LAN player
 LAN_PLAYER_IP="10.0.0.2"
-#IP of the VPN player
+# IP of the VPN player
 VPN_PLAYER_IP="25.0.0.2"
-#LAN network with netmask
+# LAN network with netmask
 LAN_NETWORK="10.0.0.0/24"
-#VPN network with netmask
+# VPN network with netmask
 VPN_NETWORK="25.0.0.0/8"
-#local LAN broadcast address
+# local LAN broadcast address
 LAN_BROADCAST_IP="10.0.0.255"
-#local LAN interface name
+# local LAN interface name
 LAN_INTF="eth0"
-#local VPN interface name
+# local VPN interface name
 VPN_INTF="ham0"
-#local VPN IP
-VPN_LOCAL_IP=$(ifconfig $VPN_INTF | grep -w inet | awk '{print $2;}')
+# path to the Wookiee Broadcaster script on the local host
+LOCAL_WB_PATH="/home/username/wookiee_broadcaster.py"
+# Wookiee Broadcaster script of binary name
+LOCAL_WB_NAME=$(basename $LOCAL_WB_PATH)
+# local VPN IP
+VPN_LOCAL_IP=$(ifconfig $VPN_INTF | grep -w inet | awk '{print $2}')
 
 ######################### IMPORTANT NOTE ############################
 #                                                                   #
@@ -69,7 +73,7 @@ case $game in
         echo ">>> Setting up Torchlight 2..."
         # broadcast NAT
         sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 4549 -j TEE --gateway $LAN_BROADCAST_IP
-        ./wookiee_broadcaster -p 4549 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
+        $LOCAL_WB_PATH -p 4549 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
         # regular NAT
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 4549 -j DNAT --to-destination $LAN_PLAYER_IP
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 30000:65000 -j DNAT --to-destination $LAN_PLAYER_IP
@@ -80,7 +84,7 @@ case $game in
         echo ">>> Setting up Worms Armageddon..."
         # broadcast NAT
         sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 17012 -j TEE --gateway $LAN_BROADCAST_IP
-        ./wookiee_broadcaster -p 17012 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
+        $LOCAL_WB_PATH -p 17012 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
         # regular NAT
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 17012 -j DNAT --to-destination $LAN_PLAYER_IP
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p tcp -s $VPN_PLAYER_IP --dport 17011 -j DNAT --to-destination $LAN_PLAYER_IP
@@ -93,7 +97,7 @@ case $game in
         echo ">>> Setting up Divinty Original Sin - Enhanced Edition..."
         # broadcast NAT
         sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 23243:23262 -j TEE --gateway $LAN_BROADCAST_IP
-        ./wookiee_broadcaster -p 23243:23262 -i $LAN_INTF -o $VPN_INTF -q >> wookiee_broadcaster.log 2>&1 &
+        $LOCAL_WB_PATH -p 23243:23262 -i $LAN_INTF -o $VPN_INTF -q >> wookiee_broadcaster.log 2>&1 &
         # regular NAT
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 23243:23262 -j DNAT --to-destination $LAN_PLAYER_IP
         sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 23243:23262 -j SNAT --to-source $VPN_LOCAL_IP
@@ -102,7 +106,7 @@ case $game in
         echo ">>> Setting up Majesty 2..."
         # broadcast NAT
         sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 3210 -j TEE --gateway $LAN_BROADCAST_IP
-        ./wookiee_broadcaster -p 3210 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
+        $LOCAL_WB_PATH -p 3210 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
         # regular NAT
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 3210 -j DNAT --to-destination $LAN_PLAYER_IP
         sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 3210 -j SNAT --to-source $VPN_LOCAL_IP
@@ -118,10 +122,7 @@ echo ">>> VPN relay setup complete!"
 read -p ">>> Press any key to terminate..."
 
 # terminate all broadcast replication processes
-for process in $(ps -ef | grep ./wookiee_broadcaster | grep -v grep | awk '{print $2;}')
-do
-    kill $process
-done
+pkill -f $LOCAL_WB_NAME > /dev/null 2>&1
 
 # remove game-specific broadcasting/NAT rules
 # 
