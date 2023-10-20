@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 '''
 @author: Winter Snowfall
-@version: 2.22
-@date: 24/06/2023
+@version: 2.30
+@date: 20/10/2023
 '''
 
 import socket
 import logging
 import multiprocessing
 import argparse
+import platform
 import subprocess
 import signal
 import ipaddress
-from time import sleep
 
 # logging configuration block
 LOGGER_FORMAT = '%(asctime)s %(levelname)s >>> %(message)s'
@@ -28,9 +28,8 @@ BROADCAST_ADDRESS = '255.255.255.255'
 PORTS_RANGE = (1024, 65535)
 # broadcast UDP packets are not typically all that large
 RECV_BUFFER_SIZE = 2048 #bytes
-PACKET_QUEUE_SIZE = 4 #packets
-# allow spawned processes to fully initialize before the process is started
-PROCESS_SPAWN_WAIT_INTERVAL = 0.1 #seconds
+# maximum number of packets that can be stacked for receive/send operations
+PACKET_QUEUE_SIZE = 64 #packets
 
 def sigterm_handler(signum, frame):
     # exceptions may happen here as well due to logger syncronization mayhem on shutdown
@@ -66,7 +65,7 @@ def wookiee_receiver(process_no, input_intf, input_ip,
         try:
             receiver.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, input_intf)
         except AttributeError:
-            logger.critical(f'WB P{process_no} --- SO_BINDTODEVICE is not available. Windows is NOT supported!')
+            logger.critical(f'WB P{process_no} --- SO_BINDTODEVICE is not available.')
             exit_event.set()
         except OSError:
             logger.critical(f'WB P{process_no} --- Interface not found or unavailable.')
@@ -83,6 +82,8 @@ def wookiee_receiver(process_no, input_intf, input_ip,
             #logger.debug(f'WB P{process_no} >>> {addr[0]}:{addr[1]} sent: {data}')
             
             if addr[0] != input_ip and ipaddress.IPv4Address(addr[0]) not in output_network:
+                if queue.full():
+                    logger.error(f'WB P{process_no} --- Packet queue has hit its capacity limit!')
                 queue.put(data)
             else:
                 # if such packets are intercepted, traffic to the desired endpoint may be lost
@@ -117,7 +118,7 @@ def wookiee_broadcaster(process_no, output_intf, output_ip,
         try:
             broadcaster.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE, output_intf)
         except AttributeError:
-            logger.critical(f'WB P{process_no} +++ SO_BINDTODEVICE is not available. Windows is NOT supported!')
+            logger.critical(f'WB P{process_no} +++ SO_BINDTODEVICE is not available.')
             exit_event.set()
         except OSError:
             logger.critical(f'WB P{process_no} +++ Interface not found or unavailable.')
@@ -153,6 +154,11 @@ if __name__ == "__main__":
     # catch SIGINT and exit gracefully
     signal.signal(signal.SIGINT, sigint_handler)
     
+    # 'spawn' will be the default starting with Python 3.14
+    # (since it is more thread-safe), but since we want to ensure
+    # compatibility with Nuitka, set it to 'fork' manually
+    multiprocessing.set_start_method('fork')
+    
     parser = argparse.ArgumentParser(description=('*** The Wookiee Broadcaster *** Replicates broadcast packets across network interfaces. '
                                                   'Useful for TCP/IP and UDP/IP based multiplayer LAN games enjoyed using VPN.'), add_help=False)
     
@@ -173,6 +179,10 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
+    if platform.system() == 'Windows':
+        logger.critical('WB >>> The Wookiee Broadcaster is intended for Linux use only!')
+        raise SystemExit(1)
+    
     # disable all logging in quiet mode
     if args.quiet:
         logging.disable(logging.CRITICAL)
@@ -182,22 +192,22 @@ if __name__ == "__main__":
         ports = [int(port) for port in args.ports.split(':')]
     except:
         logger.critical('WB >>> Invalid port value(s) specified. Please retry with valid port value(s).')
-        raise SystemExit(1)
+        raise SystemExit(2)
     
     if len(ports) > 1:
         try:
             start_port, end_port = ports[:]
         except:
             logger.critical('WB >>> Laugh it up, fuzzball...')
-            raise SystemExit(2)
+            raise SystemExit(3)
         
         if end_port <= start_port:
             logger.critical('WB >>> Incorrect use of the port range parameter. Please run -h to see needed parameters.')
-            raise SystemExit(3)
+            raise SystemExit(4)
         
         if start_port < PORTS_RANGE[0] or end_port > PORTS_RANGE[1]:
             logger.critical(f'WB >>> Please use valid ports, in the {PORTS_RANGE[0]}:{PORTS_RANGE[1]} range.')
-            raise SystemExit(4)
+            raise SystemExit(5)
         
         port_range = range(start_port, end_port + 1)
         port_range_len = len(port_range)
@@ -206,7 +216,7 @@ if __name__ == "__main__":
     else:
         if ports[0] < PORTS_RANGE[0] or ports[0] > PORTS_RANGE[1]:
             logger.critical(f'WB >>> Please use a valid port, in the {PORTS_RANGE[0]}:{PORTS_RANGE[1]} range.')
-            raise SystemExit(4)
+            raise SystemExit(6)
         
         port_range = ports
         port_range_len = 1
@@ -218,12 +228,15 @@ if __name__ == "__main__":
     
     if input_intf == output_intf:
         logger.critical('WB >>> It\'s not wise to upset a wookiee...')
-        raise SystemExit(5)
+        raise SystemExit(7)
     
     try:
-        input_ip_query_subprocess = subprocess.Popen(''.join(('ifconfig ', args.input_intf, ' | grep -w inet | awk \'{print $2 " " $4;}\'')), 
-                                                     shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        input_ip, input_netmask = input_ip_query_subprocess.communicate()[0].decode('utf-8').strip().split()
+        input_ip_query_subprocess = subprocess.run(['ip', '-4', 'addr', 'show', args.input_intf],
+                                                   stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                                   check=True)
+        input_ip_query_output = input_ip_query_subprocess.stdout.decode('utf-8')
+        input_ip, input_netmask = input_ip_query_output[input_ip_query_output.find('inet ') + 5:
+                                                        input_ip_query_output.find(' brd')].split('/')
         
         logger.debug(f'WB >>> input_ip: {input_ip}')
         logger.debug(f'WB >>> input_netmask: {input_netmask}')
@@ -231,16 +244,19 @@ if __name__ == "__main__":
         logger.debug(f'WB >>> input_network: {input_network}')
         
         if input_ip == '':
-            logger.critical(f'Invalid input interface {args.input}. Please retry with a valid interface name.')
-            raise SystemExit(6)
+            logger.critical(f'Unable to obtain an IP address for {args.input_intf}. Please retry with a valid interface name.')
+            raise SystemExit(8)
     except:
-        logger.critical(f'Invalid input interface {args.input}. Please retry with a valid interface name.')
-        raise SystemExit(6)
+        logger.critical(f'Invalid input interface {args.input_intf}. Please retry with a valid interface name.')
+        raise SystemExit(8)
 
     try:
-        output_ip_query_subprocess = subprocess.Popen(''.join(('ifconfig ', args.output_intf, ' | grep -w inet | awk \'{print $2 " " $4;}\'')), 
-                                                      shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-        output_ip, output_netmask = output_ip_query_subprocess.communicate()[0].decode('utf-8').strip().split()
+        output_ip_query_subprocess = subprocess.run(['ip', '-4', 'addr', 'show', args.output_intf],
+                                                   stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                                   check=True)
+        output_ip_query_output = output_ip_query_subprocess.stdout.decode('utf-8')
+        output_ip, output_netmask = output_ip_query_output[output_ip_query_output.find('inet ') + 5:
+                                                           output_ip_query_output.find(' brd')].split('/')
         
         logger.debug(f'WB >>> output_ip: {output_ip}')
         logger.debug(f'WB >>> output_netmask: {output_netmask}')
@@ -248,11 +264,11 @@ if __name__ == "__main__":
         logger.debug(f'WB >>> output_network: {output_network}')
         
         if output_ip == '':
-            logger.critical(f'WB >>> Invalid output interface {args.output}. Please retry with a valid interface name.')
-            raise SystemExit(7)
+            logger.critical(f'WB >>> Unable to obtain an IP address for {args.output_intf}. Please retry with a valid interface name.')
+            raise SystemExit(9)
     except:
-        logger.critical(f'WB >>> Invalid output interface {args.output}. Please retry with a valid interface name.')
-        raise SystemExit(7)
+        logger.critical(f'WB >>> Invalid output interface {args.output_intf}. Please retry with a valid interface name.')
+        raise SystemExit(9)
     
     if args.bidirectional:
         logger.info('*** Running in bidirectional mode ***')
@@ -282,15 +298,11 @@ if __name__ == "__main__":
                                                                             daemon=True)
         wookiee_receiver_procs_list[proc_counter].start()
         
-        sleep(PROCESS_SPAWN_WAIT_INTERVAL)
-        
         wookiee_broadcaster_procs_list[proc_counter] = multiprocessing.Process(target=wookiee_broadcaster, 
                                                                                args=(proc_counter + 1, output_intf, output_ip, 
                                                                                      port, exit_event, broadcast_queue_list[proc_counter]), 
                                                                                daemon=True)
         wookiee_broadcaster_procs_list[proc_counter].start()
-        
-        sleep(PROCESS_SPAWN_WAIT_INTERVAL)
         
         if bidirectional_mode:
             proc_counter += 1
@@ -304,15 +316,11 @@ if __name__ == "__main__":
                                                                                 daemon=True)
             wookiee_receiver_procs_list[proc_counter].start()
             
-            sleep(PROCESS_SPAWN_WAIT_INTERVAL)
-            
             wookiee_broadcaster_procs_list[proc_counter] = multiprocessing.Process(target=wookiee_broadcaster, 
                                                                                    args=(proc_counter + 1, input_intf, input_ip, 
                                                                                          port, exit_event, broadcast_queue_list[proc_counter]), 
                                                                                    daemon=True)
             wookiee_broadcaster_procs_list[proc_counter].start()
-            
-            sleep(PROCESS_SPAWN_WAIT_INTERVAL)
         
         proc_counter += 1
     
