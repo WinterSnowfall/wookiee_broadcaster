@@ -13,7 +13,14 @@ LOCAL_NM_CONNECTION_NAME="Wired connection 1"
 # local network interface name
 LOCAL_INTF="eth0"
 # local IP, based on the interface name
-LOCAL_IP=$(ifconfig $LOCAL_INTF | grep -w inet | awk '{print $2;}')
+LOCAL_IP=$(ip -4 addr show $LOCAL_INTF 2>/dev/null | grep -w inet | awk '{print $2}' | cut -d '/' -f 1)
+
+# can only ever happen if an invalid LOCAL_INTF is used
+if [ -z $LOCAL_IP ]
+then
+    echo "Unable to detect local IP address. Check the LOCAL_INTF parameter and retry."
+    exit 1
+fi
 
 case $1 in
     start)
@@ -42,7 +49,7 @@ case $1 in
         ;;
     *)
         echo "Invalid option!"
-        exit 1
+        exit 2
         ;;
 esac
 

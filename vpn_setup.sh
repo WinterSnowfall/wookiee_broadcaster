@@ -25,7 +25,14 @@ LOCAL_WB_PATH="/home/username/wookiee_broadcaster.py"
 # Wookiee Broadcaster script of binary name
 LOCAL_WB_NAME=$(basename $LOCAL_WB_PATH)
 # local VPN IP
-VPN_LOCAL_IP=$(ifconfig $VPN_INTF | grep -w inet | awk '{print $2}')
+VPN_LOCAL_IP=$(ip -4 addr show $VPN_INTF 2>/dev/null | grep -w inet | awk '{print $2}' | cut -d '/' -f 1)
+
+# can only ever happen if an invalid VPN_INTF is used
+if [ -z $VPN_LOCAL_IP ]
+then
+    echo "Unable to detect VPN IP address. Check the VPN_INTF parameter and retry."
+    exit 1
+fi
 
 ######################### IMPORTANT NOTE ############################
 #                                                                   #
@@ -113,7 +120,7 @@ case $game in
         ;;
     *)
         echo ">>> Invalid option!"
-        exit 1
+        exit 2
         ;;
 esac
 

@@ -60,8 +60,8 @@ It's written for Linux, so you'll need a **Linux OS** with **python 3.6+** insta
 You can run **./wookiee_broadcaster.py -h** to get some hints, but in short, you'll need to specify:
 
 * -p <ports> = the port or ports on which the script will listen for packets - use port ranges to specify multiple ports, separated by ":", e.g.: 10000:10010
-* -i <input> = the name of the network interface (as listed by ifconfig) on which the script will listen for incoming broadcast packets
-* -o <output> = the name of the network interface (as listed by ifconfig) on which the script will replicate any broadcast packets received on the input interface
+* -i <input> = the name of the network interface (as listed by `ip addr`) on which the script will listen for incoming broadcast packets
+* -o <output> = the name of the network interface (as listed by `ip addr`) on which the script will replicate any broadcast packets received on the input interface
 
 There are also a few optional command line arguments:
 
