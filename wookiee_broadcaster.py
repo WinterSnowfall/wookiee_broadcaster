@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
 @author: Winter Snowfall
-@version: 2.31
-@date: 20/10/2023
+@version: 2.32
+@date: 18/10/2024
 '''
 
 import socket
@@ -30,11 +30,6 @@ PORTS_RANGE = (1024, 65535)
 RECV_BUFFER_SIZE = 2048 #bytes
 # maximum number of packets that can be stacked for receive/send operations
 PACKET_QUEUE_SIZE = 64 #packets
-
-# 'spawn' will be the default starting with Python 3.14
-# (since it is more thread-safe), but since we want to ensure
-# compatibility with Nuitka, set it to 'fork' manually
-MULTIPROCESS_START_METHOD = 'fork'
 
 def sigterm_handler(signum, frame):
     # exceptions may happen here as well due to logger syncronization mayhem on shutdown
@@ -158,8 +153,6 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, sigterm_handler)
     # catch SIGINT and exit gracefully
     signal.signal(signal.SIGINT, sigint_handler)
-
-    multiprocessing.set_start_method(MULTIPROCESS_START_METHOD)
 
     parser = argparse.ArgumentParser(description=('*** The Wookiee Broadcaster *** Replicates broadcast packets across network interfaces. '
                                                   'Useful for TCP/IP and UDP/IP based multiplayer LAN games enjoyed using VPN.'), add_help=False)
