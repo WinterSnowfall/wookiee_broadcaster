@@ -10,6 +10,8 @@
 LAN_PLAYER_IP="10.0.0.2"
 # IP of the VPN player
 VPN_PLAYER_IP="25.0.0.2"
+# VPN player is hosting the game
+VPN_PLAYER_IS_HOSTING=false
 # LAN network with netmask
 LAN_NETWORK="10.0.0.0/24"
 # VPN network with netmask
@@ -79,8 +81,12 @@ case $game in
     1)
         echo ">>> Setting up Torchlight 2..."
         # broadcast NAT
-        sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 4549 -j TEE --gateway $LAN_BROADCAST_IP
-        $LOCAL_WB_PATH -p 4549 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
+        if $VPN_PLAYER_IS_HOSTING
+        then
+            sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 4549 -j TEE --gateway $LAN_BROADCAST_IP
+        else
+            $LOCAL_WB_PATH -p 4549 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
+        fi
         # regular NAT
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 4549 -j DNAT --to-destination $LAN_PLAYER_IP
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 30000:65000 -j DNAT --to-destination $LAN_PLAYER_IP
@@ -90,8 +96,12 @@ case $game in
     2)
         echo ">>> Setting up Worms Armageddon..."
         # broadcast NAT
-        sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 17012 -j TEE --gateway $LAN_BROADCAST_IP
-        $LOCAL_WB_PATH -p 17012 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
+        if $VPN_PLAYER_IS_HOSTING
+        then
+            sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 17012 -j TEE --gateway $LAN_BROADCAST_IP
+        else
+            $LOCAL_WB_PATH -p 17012 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
+        fi
         # regular NAT
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 17012 -j DNAT --to-destination $LAN_PLAYER_IP
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p tcp -s $VPN_PLAYER_IP --dport 17011 -j DNAT --to-destination $LAN_PLAYER_IP
@@ -103,8 +113,12 @@ case $game in
     3)
         echo ">>> Setting up Divinty Original Sin - Enhanced Edition..."
         # broadcast NAT
-        sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 23243:23262 -j TEE --gateway $LAN_BROADCAST_IP
-        $LOCAL_WB_PATH -p 23243:23262 -i $LAN_INTF -o $VPN_INTF -q >> wookiee_broadcaster.log 2>&1 &
+        if $VPN_PLAYER_IS_HOSTING
+        then
+            sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 23243:23262 -j TEE --gateway $LAN_BROADCAST_IP
+        else
+            $LOCAL_WB_PATH -p 23243:23262 -i $LAN_INTF -o $VPN_INTF -q >> wookiee_broadcaster.log 2>&1 &
+        fi
         # regular NAT
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 23243:23262 -j DNAT --to-destination $LAN_PLAYER_IP
         sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 23243:23262 -j SNAT --to-source $VPN_LOCAL_IP
@@ -112,8 +126,12 @@ case $game in
     4)
         echo ">>> Setting up Majesty 2..."
         # broadcast NAT
-        sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 3210 -j TEE --gateway $LAN_BROADCAST_IP
-        $LOCAL_WB_PATH -p 3210 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
+        if $VPN_PLAYER_IS_HOSTING
+        then
+            sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 3210 -j TEE --gateway $LAN_BROADCAST_IP
+        else
+            $LOCAL_WB_PATH -p 3210 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
+        fi
         # regular NAT
         sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 3210 -j DNAT --to-destination $LAN_PLAYER_IP
         sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 3210 -j SNAT --to-source $VPN_LOCAL_IP

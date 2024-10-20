@@ -168,8 +168,6 @@ if __name__ == "__main__":
 
     # reposition the standard -h flag at the bottom, in a custom optional section
     optional.add_argument('-h', '--help', action='help', help='show this help message and exit')
-    optional.add_argument('-b', '--bidirectional', help='Replicate broadcasts coming from the output interface to the input interface as well',
-                          action='store_true')
     optional.add_argument('-q', '--quiet', help='Disable all logging output.', action='store_true')
 
     args = parser.parse_args()
@@ -265,15 +263,6 @@ if __name__ == "__main__":
         logger.critical(f'WB >>> Invalid output interface {args.output_intf}. Please retry with a valid interface name.')
         raise SystemExit(9)
 
-    if args.bidirectional:
-        logger.info('*** Running in bidirectional mode ***')
-
-        bidirectional_mode = True
-        # double the length of all elements if bidirectional mode is enabled
-        port_range_len *= 2
-    else:
-        bidirectional_mode = False
-
     wookiee_receiver_procs_list = [None] * port_range_len
     wookiee_broadcaster_procs_list = [None] * port_range_len
 
@@ -298,24 +287,6 @@ if __name__ == "__main__":
                                                                                      port, exit_event, broadcast_queue_list[proc_counter]),
                                                                                daemon=True)
         wookiee_broadcaster_procs_list[proc_counter].start()
-
-        if bidirectional_mode:
-            proc_counter += 1
-
-            logger.info(f'WB P{proc_counter + 1} >>> Starting Wookiee Broadcaster - listening on {args.output_intf}/{BROADCAST_ADDRESS}:{port}, '
-                        f'broadcasting on {args.input_intf}/{input_ip}:{port}')
-            wookiee_receiver_procs_list[proc_counter] = multiprocessing.Process(target=wookiee_receiver,
-                                                                                args=(proc_counter + 1, output_intf, output_ip,
-                                                                                      input_network, port, exit_event,
-                                                                                      broadcast_queue_list[proc_counter]),
-                                                                                daemon=True)
-            wookiee_receiver_procs_list[proc_counter].start()
-
-            wookiee_broadcaster_procs_list[proc_counter] = multiprocessing.Process(target=wookiee_broadcaster,
-                                                                                   args=(proc_counter + 1, input_intf, input_ip,
-                                                                                         port, exit_event, broadcast_queue_list[proc_counter]),
-                                                                                   daemon=True)
-            wookiee_broadcaster_procs_list[proc_counter].start()
 
         proc_counter += 1
 
