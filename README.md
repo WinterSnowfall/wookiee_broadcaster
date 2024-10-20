@@ -62,10 +62,6 @@ You can run **./wookiee_broadcaster.py -h** to get some hints, but in short, you
 * -p <ports> = the port or ports on which the script will listen for packets - use port ranges to specify multiple ports, separated by ":", e.g.: 10000:10010
 * -i <input> = the name of the network interface (as listed by `ip addr`) on which the script will listen for incoming broadcast packets
 * -o <output> = the name of the network interface (as listed by `ip addr`) on which the script will replicate any broadcast packets received on the input interface
-
-There are also a few optional command line arguments:
-
-* -b = bidirectional mode - will forward broadcast packets from the output interface back to the input interface as well, though, as explained earlier, this is not usually that useful unless the network zones have bilateral routing capabilities or are somehow bridged (defaults to **False** if unspecified)
 * -q = quiet mode - suppresses all logging messages (defaults to **False** if unspecified)
 
 **Note**: All port values must be specified in the bindable, non-protected range of **1024:65535**.
