@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# LAN network with netmask
-LAN_NETWORK="10.0.0.0/24"
+# VPN network with netmask
+VPN_NETWORK="25.0.0.0/8"
 # default gateway IP
 DEFAULT_GATEWAY_IP="10.0.0.1"
 # VPN gateway IP
@@ -24,7 +24,7 @@ fi
 
 case $1 in
     start)
-        sudo echo "Setting up local network connection for VPN relay..."    
+        sudo echo "Setting up local network connection for VPN relay..."
         sudo nmcli connection down "$LOCAL_NM_CONNECTION_NAME"
         if $LOCAL_DHCP
         then
@@ -33,10 +33,20 @@ case $1 in
             sudo nmcli connection modify "$LOCAL_NM_CONNECTION_NAME" ipv4.gateway $VPN_GATEWAY_IP
         fi
         sudo nmcli connection up "$LOCAL_NM_CONNECTION_NAME"
-        echo "Setup complete."  
+
+        # add generic ufw rules to allow traffic
+        sudo ufw allow from $VPN_GATEWAY_IP to any
+        sudo ufw allow from $VPN_NETWORK to any
+
+        echo "Setup complete."
         ;;
     stop)
-        sudo echo "Reverting local network connection settings..."  
+        sudo echo "Reverting local network connection settings..."
+
+        # remove generic ufw rules to allow traffic
+        sudo ufw delete allow from $VPN_GATEWAY_IP to any
+        sudo ufw delete allow from $VPN_NETWORK to any
+
         sudo nmcli connection down "$LOCAL_NM_CONNECTION_NAME"
         if $LOCAL_DHCP
         then
@@ -45,6 +55,7 @@ case $1 in
             sudo nmcli connection modify "$LOCAL_NM_CONNECTION_NAME" ipv4.gateway $DEFAULT_GATEWAY_IP
         fi
         sudo nmcli connection up "$LOCAL_NM_CONNECTION_NAME"
+
         echo "Normal settings restored."
         ;;
     *)
