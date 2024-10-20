@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# NOTE: this script uses ufw to setup relaying rules.
+# Please ensure it is available to use on the system where
+# you plan to run this script.
+
 # VPN network with netmask
 VPN_NETWORK="25.0.0.0/8"
 # default gateway IP
