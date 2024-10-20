@@ -57,10 +57,11 @@ echo ">>> VPN IP is set to : $VPN_PLAYER_IP"
 echo ""
 echo "####################################################"
 echo "#                                                  #"
-echo "#   (1)  Torchlight 2                              #"
-echo "#   (2)  Worms Armageddon                          #"
-echo "#   (3)  Divinty Original Sin - Enhanced Edition   #"
-echo "#   (4)  Majesty 2                                 #"
+echo "#   (1)  Anno 1404: Venice                         #"
+echo "#   (2)  Divinty Original Sin - Enhanced Edition   #"
+echo "#   (3)  Majesty 2                                 #"
+echo "#   (4)  Torchlight 2                              #"
+echo "#   (5)  Worms Armageddon                          #"
 echo "#                                                  #"
 echo "####################################################"
 echo ""
@@ -79,6 +80,47 @@ sudo iptables -P FORWARD ACCEPT
 # add game-specific broadcasting/NAT rules
 case $game in
     1)
+        echo ">>> Setting up Anno 1404: Venice..."
+        # broadcast NAT
+        if $VPN_PLAYER_IS_HOSTING
+        then
+            sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 9100 -j TEE --gateway $LAN_BROADCAST_IP
+        else
+            $LOCAL_WB_PATH -p 9100 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
+        fi
+        # regular NAT
+        sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 16000 -j DNAT --to-destination $LAN_PLAYER_IP
+        sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 9100:9103 -j DNAT --to-destination $LAN_PLAYER_IP
+        sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 16000 -j SNAT --to-source $VPN_LOCAL_IP
+        sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 9100:9103 -j SNAT --to-source $VPN_LOCAL_IP
+        ;;
+    2)
+        echo ">>> Setting up Divinty Original Sin - Enhanced Edition..."
+        # broadcast NAT
+        if $VPN_PLAYER_IS_HOSTING
+        then
+            sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 23243:23262 -j TEE --gateway $LAN_BROADCAST_IP
+        else
+            $LOCAL_WB_PATH -p 23243:23262 -i $LAN_INTF -o $VPN_INTF -q >> wookiee_broadcaster.log 2>&1 &
+        fi
+        # regular NAT
+        sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 23243:23262 -j DNAT --to-destination $LAN_PLAYER_IP
+        sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 23243:23262 -j SNAT --to-source $VPN_LOCAL_IP
+        ;;
+    3)
+        echo ">>> Setting up Majesty 2..."
+        # broadcast NAT
+        if $VPN_PLAYER_IS_HOSTING
+        then
+            sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 3210 -j TEE --gateway $LAN_BROADCAST_IP
+        else
+            $LOCAL_WB_PATH -p 3210 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
+        fi
+        # regular NAT
+        sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 3210 -j DNAT --to-destination $LAN_PLAYER_IP
+        sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 3210 -j SNAT --to-source $VPN_LOCAL_IP
+        ;;
+    4)
         echo ">>> Setting up Torchlight 2..."
         # broadcast NAT
         if $VPN_PLAYER_IS_HOSTING
@@ -93,7 +135,7 @@ case $game in
         sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 4549 -j SNAT --to-source $VPN_LOCAL_IP
         sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 30000:65000 -j SNAT --to-source $VPN_LOCAL_IP
         ;;
-    2)
+    5)
         echo ">>> Setting up Worms Armageddon..."
         # broadcast NAT
         if $VPN_PLAYER_IS_HOSTING
@@ -109,32 +151,6 @@ case $game in
         sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 17012 -j SNAT --to-source $VPN_LOCAL_IP
         sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p tcp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 17011 -j SNAT --to-source $VPN_LOCAL_IP
         sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p tcp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 50000:55000 -j SNAT --to-source $VPN_LOCAL_IP
-        ;;
-    3)
-        echo ">>> Setting up Divinty Original Sin - Enhanced Edition..."
-        # broadcast NAT
-        if $VPN_PLAYER_IS_HOSTING
-        then
-            sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 23243:23262 -j TEE --gateway $LAN_BROADCAST_IP
-        else
-            $LOCAL_WB_PATH -p 23243:23262 -i $LAN_INTF -o $VPN_INTF -q >> wookiee_broadcaster.log 2>&1 &
-        fi
-        # regular NAT
-        sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 23243:23262 -j DNAT --to-destination $LAN_PLAYER_IP
-        sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 23243:23262 -j SNAT --to-source $VPN_LOCAL_IP
-        ;;
-    4)
-        echo ">>> Setting up Majesty 2..."
-        # broadcast NAT
-        if $VPN_PLAYER_IS_HOSTING
-        then
-            sudo iptables -t mangle -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP -d 255.255.255.255 --dport 3210 -j TEE --gateway $LAN_BROADCAST_IP
-        else
-            $LOCAL_WB_PATH -p 3210 -i $LAN_INTF -o $VPN_INTF >> wookiee_broadcaster.log 2>&1 &
-        fi
-        # regular NAT
-        sudo iptables -t nat -A PREROUTING -i $VPN_INTF -p udp -s $VPN_PLAYER_IP --dport 3210 -j DNAT --to-destination $LAN_PLAYER_IP
-        sudo iptables -t nat -A POSTROUTING -o $VPN_INTF -p udp -s $LAN_PLAYER_IP -d $VPN_PLAYER_IP --dport 3210 -j SNAT --to-source $VPN_LOCAL_IP
         ;;
     *)
         echo ">>> Invalid option!"
